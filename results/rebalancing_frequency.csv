@@ -1,0 +1,19 @@
+Rebalance_Freq,Portfolio,Net_Sharpe
+Monthly (21d),AOBL-SOS (Proposed),1.027
+Monthly (21d),Max Sharpe (Markowitz),0.611
+Monthly (21d),SOS (Baseline),0.676
+Monthly (21d),Risk Parity (Inv-Vol),0.129
+Monthly (21d),Min Variance,0.085
+Monthly (21d),Equal Weight (1/N),0.014
+Quarterly (63d),AOBL-SOS (Proposed),1.038
+Quarterly (63d),Max Sharpe (Markowitz),0.617
+Quarterly (63d),SOS (Baseline),0.684
+Quarterly (63d),Risk Parity (Inv-Vol),0.131
+Quarterly (63d),Min Variance,0.08
+Quarterly (63d),Equal Weight (1/N),0.033
+Semi-Annual (126d),AOBL-SOS (Proposed),1.044
+Semi-Annual (126d),Max Sharpe (Markowitz),0.633
+Semi-Annual (126d),SOS (Baseline),0.697
+Semi-Annual (126d),Risk Parity (Inv-Vol),0.136
+Semi-Annual (126d),Min Variance,0.09
+Semi-Annual (126d),Equal Weight (1/N),0.027
