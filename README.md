@@ -16,14 +16,15 @@ This repository implements **AOBL-SOS** (Adaptive Opposition-Based Learning Symb
 - `scripts/algorithms.py`: Contains the raw implementations for standard SOS and the proposed AOBL-SOS metaheuristic.
 - `scripts/evaluation.py`: Contains the `obj_sharpe_drawdown` fitness function and the `compute_net_metrics` function to explicitly calculate net returns minus transaction costs.
 - `scripts/utils.py`: Contains cardinality enforcing constraints and normalization routines.
-- `scripts/run_experiments.py`: The central execution script to fully replicate all tables and figures in the paper.
-- `results/`: Contains the generated outputs including transaction cost sensitivity, rebalancing frequency analysis, and cumulative return plots.
+- `scripts/run_experiments.py`: The central execution script to fully replicate all tables (including Walk-Forward expanding windows) and figures in the paper.
+- `results/`: Contains the generated outputs including transaction cost sensitivity, rebalancing frequency analysis, walk forward validation, and cumulative return plots.
+- `manuscript/`: Contains the finalized, formatted `.tex` submission, the `.bib` bibliography, and copies of all generated data/graphs for direct compilation.
 
 ## Replication
 To replicate the exact figures and metrics presented in the paper, execute the following from the root directory:
 
 ```bash
-python -m scripts.run_experiments
+python3 -m scripts.run_experiments
 ```
 
-This will run the full Walk-Forward out-of-sample optimization and deposit the results into the `results/` folder.
+This will run the full Walk-Forward out-of-sample optimization alongside all other sensitivity tests and deposit the completely reproducible results into the `results/` folder.

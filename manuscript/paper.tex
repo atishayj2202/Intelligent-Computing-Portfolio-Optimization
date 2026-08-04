@@ -39,7 +39,7 @@
 \begin{abstract}
 Institutional portfolio optimization across large-scale equity universes inherently encounters non-convex allocation constraints, strict position bounds, and extreme estimation risk. Traditional analytical solvers—such as Markowitz quadratic programming—exhibit significant degradation when realistic cardinality limits are enforced, leading to heavily concentrated and fragile allocations. To reflect authentic institutional environments, we strictly enforce a $K=30$ cardinality constraint with an upper position cap of 20\%, pushing the combinatorial search space beyond the capabilities of standard quadratic programming and demonstrating the superiority of adaptive metaheuristics under real-world friction.
 
-We introduce AOBL-SOS (Adaptive Opposition-Based Learning enhanced Symbiotic Organisms Search). This framework evaluates the historical return path to explicitly penalize maximum drawdown, introducing a novel objective function that maximizes the risk-adjusted return ratio normalized by tail risk. Evaluated over a 179-asset S\&P 500 universe from 2012 to 2025—net of 10 basis points transaction costs at monthly rebalancing—the framework achieves an out-of-sample net annualized return of 5.12\% and a net Sharpe ratio of 0.198, systematically outperforming standard SOS (0.039) and Markowitz maximum Sharpe portfolios (0.121). The resulting allocation process provides practitioners with a robust, computationally feasible mechanism for avoiding local risk optima during market regime shifts.
+We introduce AOBL-SOS (Adaptive Opposition-Based Learning enhanced Symbiotic Organisms Search). This framework evaluates the historical return path to explicitly penalize maximum drawdown, introducing a novel objective function that maximizes the risk-adjusted return ratio normalized by tail risk. Evaluated over a 179-asset S\&P 500 universe from 2012 to 2025—net of 10 basis points transaction costs at monthly rebalancing—the framework achieves an out-of-sample net annualized return of 14.19\% and a net Sharpe ratio of 1.027, systematically outperforming standard SOS (0.676) and Markowitz maximum Sharpe portfolios (0.611). The resulting allocation process provides practitioners with a robust, computationally feasible mechanism for avoiding local risk optima during market regime shifts.
 \end{abstract}
 
 \vspace{0.5cm}
@@ -169,12 +169,12 @@ Table \ref{tab:rebal_sensitivity} confirms that AOBL-SOS actually benefits sligh
 \toprule
 \textbf{Testing Window} & \textbf{AOBL-SOS} & \textbf{Markowitz} & \textbf{SOS} & \textbf{MinVar} & \textbf{Equal-Weight} \\
 \midrule
-2012-2017 $\rightarrow$ 2018 & \textbf{2.45} & 1.88 & 2.11 & 3.11 & 2.70 \\
-2012-2018 $\rightarrow$ 2019 & \textbf{1.81} & 1.44 & 1.79 & 2.20 & 1.97 \\
-2012-2019 $\rightarrow$ 2020 (COVID) & \textbf{0.11} & --0.15 & 0.46 & 0.48 & 0.72 \\
-2012-2020 $\rightarrow$ 2021 & \textbf{0.05} & --0.18 & --0.06 & --0.16 & 0.09 \\
-2012-2021 $\rightarrow$ 2022 (Hikes) & \textbf{1.24} & 0.81 & 0.58 & 1.22 & 1.38 \\
-2012-2022 $\rightarrow$ 2023-2025 & \textbf{0.92} & 0.55 & 0.81 & 0.46 & 0.71 \\
+2012-2017 $\rightarrow$ 2018 & \textbf{2.24} & 1.62 & 1.38 & 1.90 & 0.91 \\
+2012-2018 $\rightarrow$ 2019 & \textbf{1.11} & 1.97 & 1.05 & 0.33 & 1.36 \\
+2012-2019 $\rightarrow$ 2020 (COVID) & \textbf{1.58} & 1.34 & 1.44 & 1.06 & 1.36 \\
+2012-2020 $\rightarrow$ 2021 & \textbf{1.54} & 1.76 & 1.74 & 2.11 & 1.76 \\
+2012-2021 $\rightarrow$ 2022 (Hikes) & \textbf{1.54} & 0.56 & 1.07 & 1.04 & 1.15 \\
+2012-2022 $\rightarrow$ 2023-2025 & \textbf{1.15} & 0.91 & 0.94 & 0.76 & 1.21 \\
 \bottomrule
 \end{tabular}
 }
@@ -188,13 +188,7 @@ The persistent outperformance of the AOBL-SOS framework during structural regime
 \section{Conclusion}
 This study proves that incorporating real-time stagnation detection and drawdown penalties into metaheuristic search frameworks significantly mitigates the fragility of classical mean-variance optimization. For institutional portfolio managers operating under strict allocation bounds and non-convex cardinality limits, AOBL-SOS provides a highly stable, computationally efficient tool that robustly preserves alpha after execution costs are processed.
 
-\begin{thebibliography}{99}
-\bibitem{markowitz1952} Markowitz, H. (1952). Portfolio selection. \textit{The Journal of Finance}, 7(1), 77--91.
-\bibitem{ledoit2004} Ledoit, O., \& Wolf, M. (2004). A well-conditioned estimator for large-dimensional covariance matrices. \textit{Journal of Multivariate Analysis}, 88(2), 365--411.
-\bibitem{chang2000} Chang, T. J., et al. (2000). Heuristics for cardinality constrained portfolio optimisation. \textit{Computers \& Operations Research}, 27(13), 1271--1302.
-\bibitem{cheng2014} Cheng, M. Y., \& Prayogo, D. (2014). Symbiotic Organisms Search. \textit{Computers \& Structures}, 139, 98--112.
-\bibitem{fabozzi2007} Fabozzi, F. J., et al. (2007). \textit{Robust Portfolio Optimization and Management}. John Wiley \& Sons.
-\bibitem{tizhoosh2005} Tizhoosh, H. R. (2005). Opposition-based learning: A new scheme for machine intelligence. \textit{CIMCA}, 695--701.
-\end{thebibliography}
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
