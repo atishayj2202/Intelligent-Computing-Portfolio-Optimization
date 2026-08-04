@@ -1,0 +1,2 @@
+Portfolio,Point Estimate (Sharpe),95% CI Lower,95% CI Upper,Bootstrap p-value (Sharpe <= 0),N Resamples
+AOBL-SOS,1.027,-0.292,2.367,0.0667,10000

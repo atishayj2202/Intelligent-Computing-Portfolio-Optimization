@@ -1,0 +1,7 @@
+Portfolio,CVaR 95%,Skewness,Excess Kurtosis,Hit Rate,Calmar
+AOBL-SOS (Proposed),-1.485%,0.001,0.144,53.4%,1.248
+Max Sharpe (Markowitz),-2.136%,0.079,0.258,49.4%,0.306
+SOS (Baseline),-1.564%,0.044,0.186,52.1%,0.734
+Risk Parity (Inv-Vol),-1.271%,0.113,0.253,49.9%,0.277
+Min Variance,-1.403%,0.050,0.173,50.8%,0.193
+Equal Weight (1/N),-2.194%,0.066,0.220,49.5%,0.121

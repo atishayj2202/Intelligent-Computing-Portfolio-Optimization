@@ -62,11 +62,11 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
     pop = np.array([map_func(p) for p in pop])
     
     print("  Running AOBL-SOS...")
-    _, w_aobl, _ = AOBL_SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True, 
+    _, w_aobl, aobl_curve = AOBL_SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True, 
                             init_obl=True, obl_mode="portfolio_reversal", cap=cap, K=K)
     
     print("  Running Standard SOS...")
-    _, w_sos, _ = SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True)
+    _, w_sos, sos_curve = SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True)
     
     print("  Computing Min Variance...")
     w_minvar = min_variance_portfolio(cov, cap=cap, K=K)
@@ -100,11 +100,59 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
             "Net Sharpe": f"{res['sharpe']:.3f}",
             "Net Sortino": f"{res['sortino']:.3f}",
             "Max Drawdown": f"{res['max_drawdown']*100:.2f}%",
+            "Calmar": f"{res['calmar']:.3f}",
             "Monthly Turnover": f"{res['avg_turnover']*100:.2f}%"
         })
         
     df_bench = pd.DataFrame(bench_results)
     df_bench.to_csv(os.path.join(output_dir, "master_benchmark_table.csv"), index=False)
+    
+    print("\n[1b] Generating Institutional Tail-Risk Table...")
+    risk_results = []
+    for name, w in portfolios.items():
+        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
+        risk_results.append({
+            "Portfolio": name,
+            "CVaR 95%": f"{res['cvar_95']*100:.3f}%",
+            "Skewness": f"{res['skewness']:.3f}",
+            "Excess Kurtosis": f"{res['kurtosis']:.3f}",
+            "Hit Rate": f"{res['hit_rate']*100:.1f}%",
+            "Calmar": f"{res['calmar']:.3f}",
+        })
+    df_risk = pd.DataFrame(risk_results)
+    df_risk.to_csv(os.path.join(output_dir, "institutional_risk_metrics.csv"), index=False)
+    print(df_risk.to_string(index=False))
+    
+    print("\n[1c] Bootstrap Statistical Significance Test (10,000 resamples)...")
+    n_bootstrap = 10000
+    res_aobl_full = compute_net_metrics(w_aobl, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
+    aobl_daily = res_aobl_full["daily_returns"]
+    n_days_test = len(aobl_daily)
+    
+    bootstrap_sharpes = []
+    for _ in range(n_bootstrap):
+        idx = np.random.choice(n_days_test, size=n_days_test, replace=True)
+        sample = aobl_daily[idx]
+        ann_r = np.mean(sample) * 252
+        ann_v = np.std(sample, ddof=1) * np.sqrt(252) + 1e-12
+        bootstrap_sharpes.append((ann_r - rf_annual) / ann_v)
+    bootstrap_sharpes = np.array(bootstrap_sharpes)
+    
+    ci_lower = np.percentile(bootstrap_sharpes, 2.5)
+    ci_upper = np.percentile(bootstrap_sharpes, 97.5)
+    pval = np.mean(bootstrap_sharpes <= 0)
+    
+    bootstrap_results = {
+        "Portfolio": "AOBL-SOS",
+        "Point Estimate (Sharpe)": round(res_aobl_full["sharpe"], 3),
+        "95% CI Lower": round(ci_lower, 3),
+        "95% CI Upper": round(ci_upper, 3),
+        "Bootstrap p-value (Sharpe <= 0)": f"{pval:.4f}",
+        "N Resamples": n_bootstrap
+    }
+    df_boot = pd.DataFrame([bootstrap_results])
+    df_boot.to_csv(os.path.join(output_dir, "bootstrap_significance.csv"), index=False)
+    print(f"  AOBL-SOS Sharpe: {res_aobl_full['sharpe']:.3f}  95% CI: [{ci_lower:.3f}, {ci_upper:.3f}]  p-value: {pval:.4f}")
     
     print("\n[2] Transaction Cost Sensitivity Analysis (0, 5, 10, 15 bps)...")
     cost_levels = [0, 5, 10, 15]
@@ -171,7 +219,20 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "drawdown_profile.png"), dpi=200)
     plt.close()
-    
+
+    print("\n[4c] Generating AOBL-SOS vs SOS Convergence Analysis...")
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(range(1, len(aobl_curve)+1), [-x for x in aobl_curve], color='#D85A30', lw=2.5, label='AOBL-SOS (Proposed)')
+    ax.plot(range(1, len(sos_curve)+1), [-x for x in sos_curve], color='#378ADD', lw=2.0, label='Standard SOS')
+    ax.set_title('Convergence Analysis: Objective Function (Higher = Better)', fontsize=13, fontweight='bold')
+    ax.set_xlabel('Iteration')
+    ax.set_ylabel('Objective Value (Drawdown-Penalized Sharpe)')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(os.path.join(output_dir, "convergence_analysis.png"), dpi=200)
+    plt.close(fig)
+
     print("\n[5] Walk-Forward Expanding Window Validation...")
     walk_forward_results = []
     

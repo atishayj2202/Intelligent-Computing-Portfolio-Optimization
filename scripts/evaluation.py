@@ -81,12 +81,31 @@ def compute_net_metrics(weights: np.ndarray, test_ret_df: pd.DataFrame,
     
     avg_turnover = np.mean(turnover_list) if len(turnover_list) > 0 else 0.0
     
+    # Calmar Ratio: annualized return / max drawdown
+    calmar = ann_return / max_dd if max_dd > 1e-12 else 0.0
+    
+    # CVaR (Expected Shortfall) at 95% confidence
+    var_95 = np.percentile(daily_net_returns, 5)
+    cvar_95 = np.mean(daily_net_returns[daily_net_returns <= var_95]) if np.any(daily_net_returns <= var_95) else var_95
+    
+    # Higher moments
+    skewness = float(pd.Series(daily_net_returns).skew())
+    kurtosis = float(pd.Series(daily_net_returns).kurtosis())  # excess kurtosis
+    
+    # Hit rate (% of positive return days)
+    hit_rate = np.mean(daily_net_returns > 0)
+    
     return {
         "ann_return": ann_return,
         "ann_vol": ann_vol,
         "sharpe": sharpe,
         "sortino": sortino,
         "max_drawdown": max_dd,
+        "calmar": calmar,
+        "cvar_95": cvar_95,
+        "skewness": skewness,
+        "kurtosis": kurtosis,
+        "hit_rate": hit_rate,
         "avg_turnover": avg_turnover,
         "cum_returns": cum_ret,
         "daily_returns": daily_net_returns
