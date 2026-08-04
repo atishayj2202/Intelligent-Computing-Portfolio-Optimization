@@ -109,9 +109,23 @@ Unlike traditional quantitative models that suffer from extreme weight fluctuati
 
 \begin{figure}[htbp]
 \centering
+\includegraphics[width=0.7\textwidth]{aobl_weights_dist.png}
+\caption{AOBL-SOS active weights distribution enforcing strict $K=30$ cardinality and $20\%$ maximum position constraints.}
+\label{fig:weights}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
 \includegraphics[width=0.9\textwidth]{cumulative_net_returns.png}
 \caption{Out-of-Sample Cumulative Net Return (2023-2025) incorporating 10 bps transaction costs at monthly rebalancing.}
 \label{fig:cum_returns}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{drawdown_profile.png}
+\caption{Drawdown Profile (2023-2025). Note the constrained tail risk of the Drawdown-Penalized AOBL-SOS objective relative to Markowitz maximum Sharpe portfolios.}
+\label{fig:drawdown}
 \end{figure}
 
 \section{Sensitivity and Robustness Analysis}
@@ -180,7 +194,14 @@ Table \ref{tab:rebal_sensitivity} confirms that AOBL-SOS actually benefits sligh
 }
 \end{table*}
 
-Table \ref{tab:walk_forward} tests the strategy out-of-sample over continuous expanding windows to rule out regime overfitting. AOBL-SOS demonstrates severe performance resilience during the 2020 liquidity crisis and the 2022 global inflation cycle, maintaining positive net Sharpe ratios across major drawdowns where Markowitz solvers collapsed into negative values.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.0\textwidth]{walk_forward_chart.png}
+\caption{Walk-Forward Expanding Window Validation: Grouped performance evaluation demonstrating resilience across major market shocks.}
+\label{fig:walk_forward_chart}
+\end{figure}
+
+Table \ref{tab:walk_forward} and Figure \ref{fig:walk_forward_chart} test the strategy out-of-sample over continuous expanding windows to rule out regime overfitting. AOBL-SOS demonstrates severe performance resilience during the 2020 liquidity crisis and the 2022 global inflation cycle, maintaining positive net Sharpe ratios across major drawdowns where Markowitz solvers collapsed into negative values.
 
 \subsection{Economic Rationale and Factor Rotation}
 The persistent outperformance of the AOBL-SOS framework during structural regime shifts is not merely a mathematical artifact but is grounded in implicit economic factor rotation. Because traditional Markowitz quadratic programming forces weights into perfectly correlated dense vectors, the introduction of a rigid $K=30$ limit arbitrarily slices the optimal allocation, exposing the portfolio to uncompensated idiosyncratic tail risks. Conversely, the AOBL-SOS metaheuristic navigates the discrete cardinality space natively. By employing quasi-opposition-based learning, the algorithm rapidly discards correlated high-beta clusters and efficiently isolates a concentrated sub-portfolio of diverse assets. This mechanism allows the model to act as a dynamic regime-switching engine, systematically shifting capital away from over-leveraged tech assets prior to macro-shocks without requiring explicit macroeconomic factor inputs.

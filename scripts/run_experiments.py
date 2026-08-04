@@ -154,6 +154,24 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
     plt.savefig(os.path.join(output_dir, "cumulative_net_returns.png"), dpi=200)
     plt.close()
     
+    print("\n[4b] Generating Drawdown Profile Plot...")
+    plt.figure(figsize=(12, 5))
+    for (name, w), color in zip(portfolios.items(), colors):
+        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
+        cum_ret = res["cum_returns"]
+        drawdown = cum_ret / np.maximum.accumulate(cum_ret) - 1
+        lw = 2.0 if "AOBL" in name else 1.2
+        plt.plot(drawdown, color=color, lw=lw, label=name)
+        
+    plt.title('Out-of-Sample Drawdown Profile (2023-2025)', fontsize=13, fontweight='bold')
+    plt.xlabel('Trading Days')
+    plt.ylabel('Drawdown')
+    plt.legend(loc='lower right')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "drawdown_profile.png"), dpi=200)
+    plt.close()
+    
     print("\n[5] Walk-Forward Expanding Window Validation...")
     walk_forward_results = []
     
@@ -208,6 +226,33 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
         
     df_wf = pd.DataFrame(walk_forward_results)
     df_wf.to_csv(os.path.join(output_dir, "walk_forward_table.csv"), index=False)
+
+    print("\n[5b] Generating Walk-Forward Performance Bar Chart...")
+    df_wf_plot = df_wf.set_index("Testing Window")
+    ax = df_wf_plot.plot(kind='bar', figsize=(14, 6), colormap='viridis', edgecolor='black')
+    plt.title('Walk-Forward Out-of-Sample Net Sharpe Ratios', fontsize=14, fontweight='bold')
+    plt.xlabel('Testing Windows')
+    plt.ylabel('Net Sharpe Ratio')
+    plt.xticks(rotation=15)
+    plt.legend(title='Portfolio Strategy')
+    plt.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "walk_forward_chart.png"), dpi=200)
+    plt.close()
+
+    print("\n[6] Generating AOBL-SOS Portfolio Weights Distribution...")
+    w_active = w_aobl[w_aobl > 1e-4]
+    plt.figure(figsize=(10, 5))
+    plt.bar(range(len(w_active)), sorted(w_active, reverse=True), color='#D85A30', edgecolor='black')
+    plt.axhline(y=0.20, color='red', linestyle='--', label='20% Upper Cap')
+    plt.title(f'AOBL-SOS Active Weights Distribution (K={len(w_active)})', fontsize=13, fontweight='bold')
+    plt.xlabel('Active Asset Rank')
+    plt.ylabel('Allocation Weight')
+    plt.legend()
+    plt.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "aobl_weights_dist.png"), dpi=200)
+    plt.close()
 
     print("Experiments completed. Output files generated in:", output_dir)
 
