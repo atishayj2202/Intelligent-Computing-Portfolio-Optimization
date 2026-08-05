@@ -301,6 +301,50 @@ def run_jpm_experiments(output_dir="jpm/final_submission/results"):
     plt.savefig(os.path.join(output_dir, "aobl_weights_dist.png"), dpi=200)
     plt.close()
 
+    print("\n[7] Generating Fama-French 3-Factor Attribution...")
+    try:
+        import pandas_datareader.data as web
+        import statsmodels.api as sm
+        import warnings
+        warnings.filterwarnings('ignore')
+        
+        # Portfolio daily returns (test period)
+        port_ret = test_ret.dot(w_aobl)
+        
+        # Get Fama-French data
+        start_date = port_ret.index.min().strftime('%Y-%m-%d')
+        end_date = port_ret.index.max().strftime('%Y-%m-%d')
+        
+        ff = web.DataReader('F-F_Research_Data_Factors_daily', 'famafrench', start=start_date, end=end_date)[0]
+        # FF data is in percentages (e.g. 1.5 for 1.5%), so divide by 100
+        ff = ff / 100.0
+        
+        # Align indexes
+        port_ret.index = pd.to_datetime(port_ret.index).tz_localize(None)
+        ff.index = pd.to_datetime(ff.index).tz_localize(None)
+        
+        # Merge
+        df_reg = pd.DataFrame({'Port_Ret': port_ret}).join(ff, how='inner').dropna()
+        
+        # Excess return over RF
+        y = df_reg['Port_Ret'] - df_reg['RF']
+        X = df_reg[['Mkt-RF', 'SMB', 'HML']]
+        X = sm.add_constant(X)
+        
+        model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 1})
+        
+        # Save results
+        res_df = pd.DataFrame({
+            'Coefficient': model.params,
+            't-stat': model.tvalues,
+            'p-value': model.pvalues
+        })
+        res_df.to_csv(os.path.join(output_dir, "factor_attribution.csv"))
+        
+        print("  Factor attribution generated successfully.")
+    except Exception as e:
+        print("  Failed to generate factor attribution:", e)
+
     print("Experiments completed. Output files generated in:", output_dir)
 
 if __name__ == "__main__":
