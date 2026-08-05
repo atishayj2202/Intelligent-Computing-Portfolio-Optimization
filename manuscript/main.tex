@@ -11,6 +11,7 @@
 \usepackage{cite}
 \usepackage{setspace}
 \usepackage{abstract}
+\usepackage{makecell}
 
 \hypersetup{
     colorlinks=true,
@@ -198,7 +199,7 @@ To prove the execution viability of the model, we stress-test the net Sharpe rat
 \resizebox{\textwidth}{!}{
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Portfolio Strategy} & \textbf{0 bps (Gross)} & \textbf{5 bps (Large Cap)} & \textbf{10 bps (Standard)} & \textbf{15 bps (Illiquid)} \\
+\textbf{Portfolio Strategy} & \makecell{\textbf{0 bps} \\ \textbf{(Gross)}} & \makecell{\textbf{5 bps} \\ \textbf{(Large Cap)}} & \makecell{\textbf{10 bps} \\ \textbf{(Standard)}} & \makecell{\textbf{15 bps} \\ \textbf{(Illiquid)}} \\
 \midrule
 \textbf{AOBL-SOS (Proposed)} & \textbf{1.030} & \textbf{1.028} & \textbf{1.027} & \textbf{1.025} \\
 SOS (Baseline) & 0.679 & 0.677 & 0.676 & 0.674 \\
@@ -231,6 +232,17 @@ Risk Parity (Inv-Vol) & 0.129 & 0.131 & 0.136 \\
 \end{table}
 
 Table \ref{tab:rebal_sensitivity} confirms that AOBL-SOS actually benefits slightly from longer holding periods (Sharpe expanding to 1.044 at semi-annual intervals), demonstrating that the weights assigned by the algorithm capture persistent structural alpha rather than transient noise that requires constant, high-turnover correction \cite{grinold1999}.
+
+\section{Composite Strategy Ranking}
+
+To synthesize the multi-dimensional evaluations conducted throughout this study, we rank the candidate strategies across three core institutional pillars: (1) \textbf{Capital Preservation} (minimizing CVaR and maximizing Calmar), (2) \textbf{Execution Viability} (decay in Sharpe from frictionless to illiquid), and (3) \textbf{Crisis Resilience} (net Sharpe during the 2020 COVID Crash and 2022 Drawdown). 
+
+\begin{enumerate}
+    \item \textbf{AOBL-SOS (Rank \#1)}: Unquestionably superior in \textit{Capital Preservation} (highest Calmar, lowest kurtosis) and \textit{Crisis Resilience} (crushing all benchmarks during the 2020 and 2022 shocks). Its rigid constraints also make it the undisputed leader in \textit{Execution Viability}, suffering the lowest slippage decay.
+    \item \textbf{SOS Baseline (Rank \#2)}: A strong runner-up. It provides decent execution viability and avoids the tail-risks of Markowitz, but lacks the adaptive stagnation-breaking power to reach optimal allocations, consistently trailing AOBL-SOS in Calmar ratio.
+    \item \textbf{Markowitz Max Sharpe (Rank \#3)}: Performs exceptionally well in pure, unconstrained bull markets (e.g., 2021 Post-COVID rally), but fails spectacularly during severe drawdowns. It is extremely fragile to execution costs due to high turnover.
+    \item \textbf{Min Variance \& Equal-Weight (Rank \#4)}: These heuristic baselines occasionally perform well in isolated regimes but fail to generate consistent alpha across dynamic, multi-year cycles.
+\end{enumerate}
 
 \section{Market Regime Robustness}
 
