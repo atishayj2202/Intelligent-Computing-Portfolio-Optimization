@@ -235,13 +235,19 @@ Table \ref{tab:rebal_sensitivity} confirms that AOBL-SOS actually benefits sligh
 
 \section{Composite Strategy Ranking}
 
-To synthesize the multi-dimensional evaluations conducted throughout this study, we rank the candidate strategies across three core institutional pillars: (1) \textbf{Capital Preservation} (minimizing CVaR and maximizing Calmar), (2) \textbf{Execution Viability} (decay in Sharpe from frictionless to illiquid), and (3) \textbf{Crisis Resilience} (net Sharpe during the 2020 COVID Crash and 2022 Drawdown). 
+To synthesize the multi-dimensional evaluations conducted throughout this study, we introduce the \textbf{Institutional Robustness Index (IRI)}. This composite metric aggregates capital preservation, daily consistency, and tail-risk into a single mathematical score. It is defined as the Calmar ratio scaled by the daily hit rate, and penalized by the excess kurtosis of the return distribution:
+
+\begin{equation}
+\text{IRI} = \frac{\text{Calmar} \times \text{Hit Rate}}{1 + \max(0, \text{Excess Kurtosis})}
+\end{equation}
+
+By utilizing the out-of-sample metrics from the 2023-2025 testing horizon (Table \ref{tab:master_benchmark} and Table \ref{tab:risk_metrics}), we mathematically rank the candidate strategies:
 
 \begin{enumerate}
-    \item \textbf{AOBL-SOS (Rank \#1)}: Unquestionably superior in \textit{Capital Preservation} (highest Calmar, lowest kurtosis) and \textit{Crisis Resilience} (crushing all benchmarks during the 2020 and 2022 shocks). Its rigid constraints also make it the undisputed leader in \textit{Execution Viability}, suffering the lowest slippage decay.
-    \item \textbf{SOS Baseline (Rank \#2)}: A strong runner-up. It provides decent execution viability and avoids the tail-risks of Markowitz, but lacks the adaptive stagnation-breaking power to reach optimal allocations, consistently trailing AOBL-SOS in Calmar ratio.
-    \item \textbf{Markowitz Max Sharpe (Rank \#3)}: Performs exceptionally well in pure, unconstrained bull markets (e.g., 2021 Post-COVID rally), but fails spectacularly during severe drawdowns. It is extremely fragile to execution costs due to high turnover.
-    \item \textbf{Min Variance \& Equal-Weight (Rank \#4)}: These heuristic baselines occasionally perform well in isolated regimes but fail to generate consistent alpha across dynamic, multi-year cycles.
+    \item \textbf{AOBL-SOS (Rank \#1, IRI = 0.583)}: Achieves the highest score by combining a superior Calmar ratio (1.248) and the highest hit rate (53.4\%), while maintaining the thinnest tails (excess kurtosis of 0.144).
+    \item \textbf{SOS Baseline (Rank \#2, IRI = 0.322)}: A distant runner-up. It provides decent downside protection compared to classical models but lacks the adaptive stagnation-breaking power to isolate optimal risk-adjusted subsets.
+    \item \textbf{Markowitz Max Sharpe (Rank \#3, IRI = 0.120)}: Severely penalized by its low Calmar ratio (0.306) and high excess kurtosis (0.258), mathematically demonstrating its fragility during tail-risk events.
+    \item \textbf{Heuristic Baselines (Rank \#4, IRI $\le$ 0.110)}: Risk Parity (0.110), Min Variance (0.084), and Equal-Weight (0.049) fail to generate sufficient risk-adjusted returns to remain competitive under strict institutional constraints.
 \end{enumerate}
 
 \section{Market Regime Robustness}
