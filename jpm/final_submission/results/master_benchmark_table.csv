@@ -1,7 +1,0 @@
-Portfolio,Cost (bps),Net Ann. Return,Net Ann. Vol,Net Sharpe,Net Sortino,Max Drawdown,Calmar,Monthly Turnover
-AOBL-SOS (Proposed),10,14.19%,11.87%,1.027,1.743,11.37%,1.248,3.07%
-Max Sharpe (Markowitz),10,6.04%,16.58%,0.244,0.409,19.70%,0.306,5.27%
-SOS (Baseline),10,10.44%,12.48%,0.676,1.140,14.22%,0.734,3.19%
-Risk Parity (Inv-Vol),10,3.28%,9.93%,0.129,0.218,11.85%,0.277,3.11%
-Min Variance,10,2.92%,10.82%,0.085,0.145,15.11%,0.193,3.41%
-Equal Weight (1/N),10,2.24%,17.17%,0.014,0.023,18.54%,0.121,5.49%
