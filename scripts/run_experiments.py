@@ -37,7 +37,7 @@ def inverse_volatility_portfolio(cov, cap=0.20, K=30):
     inv_vols = 1.0 / (vols + 1e-12)
     return normalize_cap_cardinality(inv_vols, cap, K)
 
-def run_jpm_experiments(output_dir="jpm/final_submission/results"):
+def run_jpm_experiments(output_dir="manuscript"):
     os.makedirs(output_dir, exist_ok=True)
     
     set_seed(42)
