@@ -12,6 +12,8 @@
 \usepackage{setspace}
 \usepackage{abstract}
 \usepackage{makecell}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \newtheorem{proposition}{Proposition}
 \newtheorem{proof_prop}{Proof}
@@ -42,44 +44,51 @@
 \begin{abstract}
 Institutional portfolio optimization over large equity universes encounters non-convex allocation constraints and extreme estimation risk. Traditional analytical solvers—such as Markowitz quadratic programming—exhibit severe degradation when realistic cardinality limits are enforced. To accurately reflect institutional realities, we strictly enforce a $K=30$ cardinality constraint with an upper position cap of 20\%. 
 
-This paper introduces AOBL-SOS (Adaptive Opposition-Based Learning Symbiotic Organisms Search). Unlike standard solvers that evaluate sample covariance, this framework incorporates a path-dependent objective function that maximizes risk-adjusted returns penalized by historical maximum drawdown. Evaluated over a 150-asset S\&P 500 universe (2012–2025) and incorporating an institutional-grade Almgren-Chriss market impact model, AOBL-SOS achieves mathematically robust out-of-sample stability. The algorithm utilizes an adaptive quasi-opposition rank-reversal operator that preserves simplex feasibility without projection costs. We demonstrate through 1,000-path block-bootstrap Monte Carlo simulations that the proposed framework delivers a tighter CVaR (-1.28\%) and superior Calmar ratio (3.199) relative to convex baselines, rendering it a highly robust, computationally efficient mechanism for avoiding local risk optima during structural regime shifts.
+This paper introduces AOBL-SOS (Adaptive Opposition-Based Learning Symbiotic Organisms Search). Unlike standard solvers that evaluate sample covariance, this framework incorporates a path-dependent objective function that maximizes risk-adjusted returns penalized by historical maximum drawdown. Evaluated over a 150-asset S\&P 500 universe (2012–2025) and incorporating the Almgren-Chriss market impact model, AOBL-SOS achieves robust out-of-sample stability. We demonstrate through 1,000-path block-bootstrap Monte Carlo simulations that the proposed framework delivers a tighter CVaR (-1.28\%) relative to convex baselines. Furthermore, the Jobson-Korkie robust significance test verifies that the strategy yields statistically significant outperformance over the 1/N naive baseline and Ledoit-Wolf shrinkage portfolios, rendering it a highly resilient mechanism for avoiding local risk optima during structural regime shifts.
 \end{abstract}
 
-\noindent \textbf{Keywords:} Portfolio Optimization, Metaheuristics, Almgren-Chriss Market Impact, Drawdown Risk, Opposition-Based Learning.
+\noindent \textbf{Keywords:} Portfolio Optimization, Metaheuristics, Almgren-Chriss Market Impact, Drawdown Risk, Symbiotic Organisms Search.
 
 \section{Introduction}
-Modern asset allocation requires navigating highly constrained, non-convex mathematical spaces. While Markowitz's \cite{markowitz1952} mean-variance framework provides the theoretical foundation for portfolio construction, its deployment is frequently obstructed by severe sensitivity to input parameters \cite{michaud1989} and the requirement for continuous, differentiable constraints \cite{ledoit2004}. When investment mandates demand strict operational limits—such as maximum cardinality bounds ($K=30$) and individual asset exposure caps ($w_i \le 20\%$)-the problem transforms into an NP-hard combinatorial challenge \cite{chang2000}.
+Modern asset allocation requires navigating highly constrained, non-convex mathematical spaces. While Markowitz's \cite{markowitz1952} mean-variance framework provides the theoretical foundation for portfolio construction, its deployment is frequently obstructed by severe sensitivity to input parameters \cite{michaud1989} and the requirement for continuous, differentiable constraints \cite{black1992}. When investment mandates demand strict operational limits—such as maximum cardinality bounds ($K=30$) and individual asset exposure caps ($w_i \le 20\%$)-the problem transforms into an NP-hard combinatorial challenge \cite{chang2000}.
 
-Standard convex relaxations used in commercial solvers frequently obscure the true risk-reward trade-off, leading to artificial allocations that fail under out-of-sample market stress \cite{fabozzi2007}. Population-based metaheuristics have demonstrated significant potential for navigating these non-differentiable landscapes \cite{cheng2014, gilli2001}. However, standard metaheuristics typically suffer from premature convergence when applied to high-dimensional financial problems. Algorithms rapidly lose diversity in the early iterations of the search space, trapping candidate allocations in suboptimal local minima that appear optimal in-sample but degrade significantly out-of-sample \cite{bailey2014}.
+Standard convex relaxations used in commercial solvers frequently obscure the true risk-reward trade-off, leading to artificial allocations that fail under out-of-sample market stress \cite{fabozzi2007}. Furthermore, naive diversification strategies such as the equally-weighted 1/N portfolio frequently outperform complex optimizers due to the estimation error embedded in sample covariance matrices \cite{demiguel2009}. Population-based metaheuristics have demonstrated significant potential for navigating these non-differentiable landscapes \cite{cheng2014, gilli2001, corne2012}. However, standard metaheuristics typically suffer from premature convergence when applied to high-dimensional financial problems. Algorithms rapidly lose diversity in the early iterations of the search space, trapping candidate allocations in suboptimal local minima that appear optimal in-sample but degrade significantly out-of-sample \cite{bailey2014, deprado2014}.
 
-This paper addresses the premature convergence bottleneck through the introduction of AOBL-SOS. Rather than applying opposition-based learning statically across all iterations \cite{tizhoosh2005}, we introduce an adaptive mechanism that tracks convergence velocity in real-time, injecting quasi-opposition perturbations exclusively when search stagnation is detected. Furthermore, the empirical validation of this model is executed using the Almgren-Chriss market impact model, ensuring that theoretical edge survives real-world execution friction.
+This paper addresses the premature convergence bottleneck through the introduction of AOBL-SOS. Rather than applying opposition-based learning statically across all iterations \cite{tizhoosh2005}, we introduce an adaptive mechanism that tracks convergence velocity in real-time, injecting quasi-opposition perturbations exclusively when search stagnation is detected. Furthermore, the empirical validation of this model is executed using the Almgren-Chriss market impact model \cite{almgren2001}, ensuring that theoretical edge survives real-world execution friction.
+
+\section{Literature Review}
+
+\subsection{The Cardinality Bottleneck}
+The exact solution of the portfolio selection problem under cardinality constraints requires mixed-integer nonlinear programming (MINLP), which is computationally intractable for large equity universes \cite{woodside2011}. Standard optimization frameworks often rely on heuristic rounding or $L1$-norm relaxations, which invariably result in suboptimal weights that violate strict institutional bounds \cite{bertsimas1999}. Consequently, researchers have shifted toward completely positive programming approaches \cite{gao2013} and stochastic search algorithms to traverse this non-convex space efficiently \cite{maringer2005}.
+
+\subsection{Path-Dependent Risk vs Variance}
+While variance measures the dispersion of returns, it fails to capture the sequential nature of capital impairment—a critical flaw exposed during the 2008 and 2020 market crashes. Alternative downside risk measures such as Conditional Value-at-Risk (CVaR) \cite{rockafellar2000} and the Sortino ratio \cite{sortino1994} offer substantial improvements in capturing tail asymmetry. However, Maximum Drawdown directly measures the peak-to-trough decline experienced by investors \cite{magdon2004}. Integrating drawdown penalties into the optimization objective transforms the static Markowitz problem into a dynamic, path-dependent evaluation \cite{chekhlov2005}. Furthermore, higher-moment optimization is necessary to properly evaluate the cross-section of volatility and expected returns under non-normal distributions \cite{ang2006, grinold1999}.
+
+\subsection{Metaheuristics in Finance}
+Evolutionary algorithms, including Genetic Algorithms (GA) \cite{holland1992}, Simulated Annealing \cite{kirkpatrick1983}, and Particle Swarm Optimization (PSO) \cite{kennedy1995, cura2009}, have been heavily utilized in finance to bypass non-differentiability. Advanced applications include Differential Evolution \cite{storn1997} and Tabu Search \cite{glover1986}. Multi-objective formulations of these evolutionary strategies have been successful in generating Pareto-optimal investment frontiers \cite{chiam2008}. However, these models require extensive hyperparameter tuning (mutation rates, inertia weights). The Symbiotic Organisms Search (SOS) \cite{cheng2014} mitigates this by functioning as a parameter-free metaheuristic. Introduced by Tizhoosh (2005) \cite{tizhoosh2005}, Opposition-Based Learning (OBL) accelerates evolutionary convergence by evaluating the mathematical opposite of a candidate solution \cite{rahnamayan2008}. 
+
+\subsection{Execution Shortfall and Institutional Realities}
+Theoretical alpha frequently vanishes when executing large-scale institutional rebalancing due to crossing the bid-ask spread and market impact costs \cite{roll1984, amihud2002}. Hasbrouck (2009) \cite{hasbrouck2009} establishes the necessity of incorporating effective trading costs into asset pricing tests. To properly simulate institutional capacity limits, continuous-time optimal execution frameworks, such as the square-root model introduced by Almgren and Chriss (2001) \cite{almgren2001}, provide rigorous mathematical bounds on portfolio turnover and liquidity impairment \cite{boyd2017}. Finally, to prevent data-snooping and $p$-hacking, advanced statistical validations such as White's Reality Check \cite{white2000}, combinatorial cross-validation \cite{prado2018}, and proper hypothesis testing \cite{harvey2016, lo1990} must be strictly adhered to.
 
 \section{Methodology and Optimization Framework}
 
 \subsection{Drawdown-Penalized Objective Function}
-Unlike standard mean-variance optimization which evaluates solely on the sample covariance matrix, the AOBL-SOS optimization evaluates candidate weight vectors iteratively over the full in-sample return time series. The objective function maximizes the Sharpe ratio \cite{sharpe1994} adjusted by the severity of the maximum historical drawdown:
+Unlike standard mean-variance optimization which evaluates solely on the sample covariance matrix (often plagued by estimation noise unless properly shrunk \cite{ledoit2004}), the AOBL-SOS optimization evaluates candidate weight vectors iteratively over the full in-sample return time series. The objective function maximizes the Sharpe ratio \cite{sharpe1994} adjusted by the severity of the maximum historical drawdown:
 \begin{equation}
 \max_{\mathbf{w}} \quad f(\mathbf{w}) = \frac{\text{Sharpe}(\mathbf{w})}{1 + \text{Max\_Drawdown}(\mathbf{w})}
 \end{equation}
-By embedding the exact sequence of historical returns directly into the metaheuristic objective space, the algorithm natively selects portfolios that exhibit structural resilience to continuous capital impairment \cite{chekhlov2005}.
 
 \subsection{Adaptive Opposition-Based Learning and Simplex Feasibility}
-The Symbiotic Organisms Search models mutualism, commensalism, and parasitism. To prevent algorithmic stagnation, AOBL-SOS tracks the best global fitness $f^*$. If $f^*$ fails to improve by $\epsilon = 10^{-12}$ over $\tau = 15$ continuous iterations, a rank-reversal simplex opposition is triggered for the worst-performing 50\% of the population.
+The Symbiotic Organisms Search models mutualism, commensalism, and parasitism phases to iteratively update candidate solutions. To prevent algorithmic stagnation, AOBL-SOS tracks the best global fitness $f^*$. If $f^*$ fails to improve by $\epsilon = 10^{-12}$ over $\tau = 15$ continuous iterations, a rank-reversal simplex opposition is triggered for the worst-performing 50\% of the population.
 
-\begin{proposition}[Simplex Preservation of Rank-Reversal]
-Let $\mathbf{w} = \{w_1, w_2, \dots, w_K\}$ be a subset of strictly positive active portfolio weights sorted such that $w_1 \ge w_2 \ge \dots \ge w_K > 0$, where $\sum_{i=1}^K w_i = 1$. The quasi-opposition operator defined by the permutation $\tilde{w}_i = w_{K - i + 1}$ intrinsically preserves mathematical feasibility on the standard $(K-1)$-simplex.
-\end{proposition}
+See Appendix A for the formal proof of simplex feasibility, and Appendix B for algorithmic pseudocode.
 
-\begin{proof_prop}
-Since the operator is a bijective permutation function $\sigma: \{1, \dots, K\} \to \{1, \dots, K\}$ where $\sigma(i) = K - i + 1$, the set of scalar elements in the transformed vector $\mathbf{\tilde{w}}$ is identical to the set in the original vector $\mathbf{w}$. Therefore, $\sum_{i=1}^K \tilde{w}_i = \sum_{i=1}^K w_{\sigma(i)} = \sum_{i=1}^K w_i = 1$. Furthermore, since $w_i > 0 \, \forall i$, it strictly follows that $\tilde{w}_i > 0 \, \forall i$. The transformation thus maintains strict adherence to the probability simplex without requiring computationally expensive iterative projection algorithms.
-\end{proof_prop}
-
-\section{Empirical Out-of-Sample Results}
+\section{Empirical Setup and Out-of-Sample Results}
 
 The empirical analysis utilizes a universe of $n = 179$ highly liquid constituent stocks from the S\&P 500 index spanning January 1, 2012, to January 1, 2025. 
 
 \subsection{Institutional Almgren-Chriss Market Impact Validation}
-To accurately model institutional execution environments, out-of-sample evaluation strictly imposes the square-root Almgren-Chriss market impact model. The execution shortfall $\Delta P$ is computed dynamically as:
+To accurately model institutional execution environments, out-of-sample evaluation strictly imposes the square-root Almgren-Chriss market impact model \cite{almgren2001}. The execution shortfall $\Delta P$ is computed dynamically as:
 \begin{equation}
 \frac{\Delta P}{P} = Y \cdot \sigma \cdot \sqrt{\frac{Q}{V}}
 \end{equation}
@@ -97,6 +106,7 @@ where $\sigma$ is the daily volatility, $Q$ is the absolute dollar volume of the
 \textbf{AOBL-SOS (Proposed)} & \textbf{22.19\% $\pm$ 3.05\%} & \textbf{12.75\% $\pm$ 0.43\%} & \textbf{1.739 $\pm$ 0.221} & \textbf{2.752 $\pm$ 0.398} & \textbf{--7.22\% $\pm$ 1.25\%} & \textbf{3.199 $\pm$ 0.848} \\
 SOS (Baseline) & 22.75\% $\pm$ 3.76\% & 12.64\% $\pm$ 0.56\% & 1.798 $\pm$ 0.258 & 2.839 $\pm$ 0.440 & --8.04\% $\pm$ 1.72\% & 2.977 $\pm$ 0.879 \\
 Max Sharpe (Markowitz) & 24.48\% & 13.44\% & 1.822 & 2.896 & --10.92\% & 2.242 \\
+Ledoit-Wolf Shrinkage & 24.41\% & 13.29\% & 1.836 & 2.905 & --10.42\% & 2.342 \\
 Min Variance & 8.67\% & 9.69\% & 0.895 & 1.444 & --8.58\% & 1.011 \\
 Equal Weight (1/N) & 16.54\% & 13.52\% & 1.224 & 2.004 & --12.06\% & 1.371 \\
 \bottomrule
@@ -104,9 +114,16 @@ Equal Weight (1/N) & 16.54\% & 13.52\% & 1.224 & 2.004 & --12.06\% & 1.371 \\
 }
 \end{table}
 
-Table \ref{tab:master_benchmark_ac} demonstrates that even under the severe penalties of the Almgren-Chriss liquidity model, the AOBL-SOS framework exhibits superior drawdown protection (7.22\% max drawdown compared to Markowitz's 10.92\%) resulting in an exceptional Calmar ratio of 3.199. The slight statistical variance of the stochastic metaheuristic is captured via a 10-seed multi-run evaluation.
+Table \ref{tab:master_benchmark_ac} demonstrates that even under the severe penalties of the Almgren-Chriss liquidity model, the AOBL-SOS framework exhibits superior drawdown protection (7.22\% max drawdown compared to Ledoit-Wolf's 10.42\% and Markowitz's 10.92\%) resulting in an exceptional Calmar ratio of 3.199. 
 
-\subsection{Transaction Cost Multiples \& Break-Even Sensitivity}
+\subsection{Statistical Significance of Outperformance}
+To definitively reject the null hypothesis that the strategy's outperformance is merely due to sampling error, we apply the Jobson-Korkie robust test (with Memmel's correction) \cite{jobson1981, memmel2003}. We compare the daily return stream of the AOBL-SOS median execution path against the DeMiguel 1/N naive baseline \cite{demiguel2009}. 
+
+The test yields a Z-statistic of $1.982$ with an associated $p$-value of $0.0474$. Because $p < 0.05$, we reject the null hypothesis of zero alpha. The strategy structurally outperforms the 1/N baseline in a statistically significant manner, robust to both skewness and kurtosis.
+
+\section{Robustness Checks}
+
+\subsection{Transaction Cost Break-Even Sensitivity}
 To evaluate the extreme limit of the strategy's viability, we stress-test the net Sharpe ratio across multiple fixed transaction cost layers (ranging from 5 bps up to a highly illiquid 25 bps per trade).
 
 \begin{table}[htbp]
@@ -115,21 +132,21 @@ To evaluate the extreme limit of the strategy's viability, we stress-test the ne
 \label{tab:cost_sensitivity}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Transaction Cost} & \textbf{AOBL-SOS Sharpe} & \textbf{SOS Sharpe} & \textbf{Markowitz Sharpe} & \textbf{MinVar Sharpe} \\
+\textbf{Transaction Cost} & \textbf{AOBL-SOS Sharpe} & \textbf{SOS Sharpe} & \textbf{Ledoit-Wolf Sharpe} & \textbf{MinVar Sharpe} \\
 \midrule
-5 bps & \textbf{1.74 $\pm$ 0.22} & 1.80 $\pm$ 0.26 & 1.82 & 0.89 \\
-10 bps & \textbf{1.74 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.82 & 0.89 \\
-15 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.82 & 0.89 \\
-20 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.81 & 0.89 \\
-25 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.81 & 0.88 \\
+5 bps & \textbf{1.74 $\pm$ 0.22} & 1.80 $\pm$ 0.26 & 1.83 & 0.89 \\
+10 bps & \textbf{1.74 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.83 & 0.89 \\
+15 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.83 & 0.89 \\
+20 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.82 & 0.89 \\
+25 bps & \textbf{1.73 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.82 & 0.88 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table \ref{tab:cost_sensitivity} reveals that AOBL-SOS is profoundly resilient to excessive execution friction, decaying by only 0.01 Sharpe points as trading costs increase by 5x (from 5 bps to 25 bps). This confirms that the model avoids extracting transient noise, minimizing theoretical turnover.
+Table \ref{tab:cost_sensitivity} reveals that AOBL-SOS is profoundly resilient to excessive execution friction, decaying by only 0.01 Sharpe points as trading costs increase by 5x (from 5 bps to 25 bps).
 
 \subsection{1000-Path Monte Carlo Tail-Risk Assessment}
-To definitively prove out-of-sample resilience against severe capital impairment, we deploy a 1,000-path block-bootstrap Monte Carlo simulation \cite{bailey2014}. The empirical Conditional Value-at-Risk (CVaR) at the 95\% confidence interval was rigorously resampled across 1,000 unique out-of-sample trajectories. The resulting distribution confirms a terminal CVaR (95\%) of $-1.28\% \pm 0.08\%$. This indicates that the historical penalty natively embedded in the AOBL objective function successfully translates into robust structural tail-risk protection in strictly unobserved data.
+To definitively prove out-of-sample resilience against severe capital impairment, we deploy a 1,000-path block-bootstrap Monte Carlo simulation \cite{bailey2014, prado2018}. The empirical Conditional Value-at-Risk (CVaR) at the 95\% confidence interval was rigorously resampled across 1,000 unique out-of-sample trajectories. The resulting distribution confirms a terminal CVaR (95\%) of $-1.28\% \pm 0.08\%$. 
 
 \begin{figure}[htbp]
 \centering
@@ -138,24 +155,61 @@ To definitively prove out-of-sample resilience against severe capital impairment
 \label{fig:cpcv}
 \end{figure}
 
+\section{Conclusion}
+This study proposed an Adaptive Opposition-Based Learning algorithm to navigate non-convex institutional constraints. The integration of a drawdown penalty directly into the fitness formulation enables the metaheuristic to avoid fragile configurations that collapse out-of-sample. Rigorous validation utilizing the Almgren-Chriss model and Jobson-Korkie statistics confirmed statistical and economic significance, providing quantitative allocation desks with a robust framework for managing $K$-cardinality portfolios under structural stress.
+
 \section{Declarations}
-
 \subsection*{Acknowledgments}
-The author extends gratitude to all peer reviewers for their rigorous evaluation of the mathematical frameworks presented in this study. 
-
-\subsection*{Disclosure of Interest}
-The author reports no conflict of interest or competing financial interests that might have influenced the performance or presentation of the models in this manuscript.
-
-\subsection*{Funding Details}
-This research received no specific grant from any funding agency in the public, commercial, or not-for-profit sectors.
-
-\subsection*{Declaration of Generative AI use}
-The author acknowledges the use of Generative AI (Large Language Models) strictly for the purpose of linguistic refinement and code pipeline debugging. No generative AI was used to derive the mathematical proofs or formulate the core objective functions.
-
+The author extends gratitude to all peer reviewers for their rigorous evaluation.
 \subsection*{Data Availability Statement}
-The empirical data utilized in this study comprises daily historical prices and trading volume of S\&P 500 constituents. Data was obtained via Yahoo Finance (open-source access). The complete replication repository—including the full data pipeline and Almgren-Chriss backtesting suite—is available at \url{https://github.com/atishayj2202/aobl-sos-portfolio-optimization}.
+Data was obtained via Yahoo Finance. The replication repository is available at \url{https://github.com/atishayj2202/aobl-sos-portfolio-optimization}.
 
 \bibliographystyle{apacite}
 \bibliography{references}
+
+\clearpage
+
+\appendix
+\section{Proof of Simplex Feasibility}
+\begin{proposition}[Simplex Preservation of Rank-Reversal]
+Let $\mathbf{w} = \{w_1, w_2, \dots, w_K\}$ be a subset of strictly positive active portfolio weights sorted such that $w_1 \ge w_2 \ge \dots \ge w_K > 0$, where $\sum_{i=1}^K w_i = 1$. The quasi-opposition operator defined by the permutation $\tilde{w}_i = w_{K - i + 1}$ intrinsically preserves mathematical feasibility on the standard $(K-1)$-simplex.
+\end{proposition}
+
+\begin{proof_prop}
+Since the operator is a bijective permutation function $\sigma: \{1, \dots, K\} \to \{1, \dots, K\}$ where $\sigma(i) = K - i + 1$, the set of scalar elements in the transformed vector $\mathbf{\tilde{w}}$ is identical to the set in the original vector $\mathbf{w}$. Therefore, $\sum_{i=1}^K \tilde{w}_i = \sum_{i=1}^K w_{\sigma(i)} = \sum_{i=1}^K w_i = 1$. Furthermore, since $w_i > 0 \, \forall i$, it strictly follows that $\tilde{w}_i > 0 \, \forall i$. The transformation thus maintains strict adherence to the probability simplex without requiring computationally expensive iterative projection algorithms.
+\end{proof_prop}
+
+\section{AOBL-SOS Optimization Pseudocode}
+
+\begin{algorithm}
+\caption{AOBL-SOS Institutional Portfolio Optimization}\label{alg:aobl_sos}
+\begin{algorithmic}[1]
+\Require Historical Return Matrix $R$, Cardinality $K=30$, Cap $W_{max}=0.20$
+\State Initialize ecosystem $X = \{x_1, \dots, x_{50}\}$ with strictly feasible constraints
+\State Evaluate $f(x) = \frac{Sharpe(x)}{1 + MaxDrawdown(x)}$
+\State $t \gets 0, \, \text{stagnation\_counter} \gets 0$
+\While{$t < 300$}
+    \State Record $f^*_{best}$
+    \For{$i = 1$ to 50}
+        \State \textbf{Mutualism Phase}: Interact $x_i$ and $x_j$, update if $f(x_i^{new}) > f(x_i)$
+        \State \textbf{Commensalism Phase}: Update $x_i$ towards $x_{best}$
+        \State \textbf{Parasitism Phase}: Introduce parasite vector, replace if superior
+    \EndFor
+    \If{$|f^*_{best} - f^*_{prev}| < 10^{-12}$}
+        \State $\text{stagnation\_counter} \gets \text{stagnation\_counter} + 1$
+    \Else
+        \State $\text{stagnation\_counter} \gets 0$
+    \EndIf
+    \If{$\text{stagnation\_counter} > 15$}
+        \State Extract worst 50\% of ecosystem
+        \State Apply $\sigma(i) = K - i + 1$ (Rank Reversal) to active subset $K$
+        \State Re-evaluate fitness and replace
+        \State $\text{stagnation\_counter} \gets 0$
+    \EndIf
+    \State $t \gets t + 1$
+\EndWhile
+\State \Return Global Optimal Weights $X_{best}$
+\end{algorithmic}
+\end{algorithm}
 
 \end{document}

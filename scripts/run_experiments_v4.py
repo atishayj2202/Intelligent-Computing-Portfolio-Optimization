@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+import scipy.stats as stats
+from sklearn.covariance import LedoitWolf
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -36,6 +38,25 @@ def inverse_volatility_portfolio(cov, cap=0.20, K=30):
     vols = np.sqrt(np.diag(cov))
     inv_vols = 1.0 / (vols + 1e-12)
     return normalize_cap_cardinality(inv_vols, cap, K)
+
+def ledoit_wolf_portfolio(mu, train_ret, rf_daily, cap=0.20, K=30):
+    lw = LedoitWolf().fit(train_ret)
+    cov_lw = lw.covariance_
+    return max_sharpe_portfolio(mu, cov_lw, rf_daily, cap, K)
+
+def jobson_korkie_memmel(ret1, ret2):
+    mu1, mu2 = np.mean(ret1), np.mean(ret2)
+    var1, var2 = np.var(ret1, ddof=1), np.var(ret2, ddof=1)
+    covar = np.cov(ret1, ret2)[0, 1]
+    
+    sh1 = mu1 / np.sqrt(var1)
+    sh2 = mu2 / np.sqrt(var2)
+    
+    T = len(ret1)
+    theta = (1/(2*T)) * (2 * var1**2 * var2**2 - 2 * var1 * var2 * covar + 0.5 * mu1**2 * var2**2 + 0.5 * mu2**2 * var1**2 - (mu1*mu2/var1*var2)*covar**2)
+    z = (sh1 - sh2) / np.sqrt(theta)
+    pval = 2 * (1 - stats.norm.cdf(abs(z)))
+    return sh1, sh2, z, pval
 
 def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
     os.makedirs(output_dir, exist_ok=True)
@@ -73,6 +94,7 @@ def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
         
     w_minvar = min_variance_portfolio(cov, cap=cap, K=K)
     w_maxsh = max_sharpe_portfolio(mu, cov, rf_daily, cap=cap, K=K)
+    w_lw = ledoit_wolf_portfolio(mu, train_ret.values, rf_daily, cap=cap, K=K)
     w_eq = normalize_cap_cardinality(np.ones(dim), cap=cap, K=K)
     
     # ---------------------------------------------------------
@@ -105,6 +127,7 @@ def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
     # Deterministic Models
     det_portfolios = {
         "Max Sharpe (Markowitz)": w_maxsh,
+        "Ledoit-Wolf Shrinkage": w_lw,
         "Min Variance": w_minvar,
         "Equal Weight (1/N)": w_eq
     }
@@ -162,6 +185,18 @@ def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
     w_aobl = aobl_dd_weights[0]
     res_base = compute_net_metrics_almgren_chriss(w_aobl, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
     net_rets = res_base['net_returns']
+    
+    # Evaluate 1/N for Jobson-Korkie
+    res_eq = compute_net_metrics_almgren_chriss(w_eq, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    eq_rets = res_eq['net_returns']
+    
+    sh1, sh2, z_stat, p_val = jobson_korkie_memmel(net_rets, eq_rets)
+    with open(os.path.join(output_dir, "statistical_significance.txt"), "w") as f:
+        f.write(f"Jobson-Korkie (Memmel) Test:\n")
+        f.write(f"AOBL-SOS Sharpe: {sh1*np.sqrt(252):.3f}\n")
+        f.write(f"1/N Sharpe: {sh2*np.sqrt(252):.3f}\n")
+        f.write(f"Z-Statistic: {z_stat:.3f}\n")
+        f.write(f"P-Value: {p_val:.5f}\n")
     
     n_days = len(net_rets)
     n_paths = 1000
