@@ -230,6 +230,56 @@ def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
     plt.legend()
     plt.grid(alpha=0.3)
     plt.savefig(os.path.join(output_dir, "cpcv_distribution.png"), dpi=200)
+    plt.close()
+    
+    # ---------------------------------------------------------
+    # 4. Cumulative Returns & Drawdown Profile Plots
+    # ---------------------------------------------------------
+    print("\n[4] Generating Cumulative Returns and Drawdown Profiles...")
+    
+    # Cumulative Returns
+    cum_aobl = np.cumprod(1 + net_rets)
+    cum_eq = np.cumprod(1 + eq_rets)
+    
+    # Also evaluate Ledoit-Wolf for the plot
+    res_lw = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    cum_lw = np.cumprod(1 + res_lw['net_returns'])
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(test_ret.index, cum_aobl, label='AOBL-SOS (Net)', color='#D85A30', linewidth=2)
+    plt.plot(test_ret.index, cum_lw, label='Ledoit-Wolf Shrinkage (Net)', color='steelblue', linewidth=1.5)
+    plt.plot(test_ret.index, cum_eq, label='1/N Equal Weight (Net)', color='gray', linestyle='dashed', linewidth=1.5)
+    plt.title('Out-of-Sample Cumulative Net Returns (Almgren-Chriss Execution)')
+    plt.ylabel('Cumulative Growth')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "cumulative_net_returns.png"), dpi=200)
+    plt.close()
+    
+    # Drawdown Profile
+    def get_drawdown(cum_ret):
+        peak = np.maximum.accumulate(cum_ret)
+        return (cum_ret - peak) / peak
+        
+    dd_aobl = get_drawdown(cum_aobl)
+    dd_lw = get_drawdown(cum_lw)
+    dd_eq = get_drawdown(cum_eq)
+    
+    plt.figure(figsize=(10, 4))
+    plt.plot(test_ret.index, dd_aobl * 100, label='AOBL-SOS Drawdown', color='#D85A30', linewidth=1.5)
+    plt.plot(test_ret.index, dd_lw * 100, label='Ledoit-Wolf Drawdown', color='steelblue', linewidth=1)
+    plt.plot(test_ret.index, dd_eq * 100, label='1/N Drawdown', color='gray', linestyle='dashed', linewidth=1)
+    plt.fill_between(test_ret.index, dd_aobl * 100, 0, color='#D85A30', alpha=0.1)
+    plt.title('Out-of-Sample Drawdown Profile')
+    plt.ylabel('Drawdown (%)')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "drawdown_profile.png"), dpi=200)
+    plt.close()
     
     print("\nExperiments completed. Output files generated in:", output_dir)
 

@@ -116,6 +116,20 @@ Equal Weight (1/N) & 11.19\% & 12.71\% & 0.880 & 1.395 & --11.52\% & 0.971 \\
 
 Table \ref{tab:master_benchmark_ac} demonstrates that even under the severe penalties of the Almgren-Chriss liquidity model, the AOBL-SOS framework exhibits superior drawdown protection (8.25\% max drawdown compared to Ledoit-Wolf's 10.40\% and Markowitz's 10.92\%) resulting in an exceptional Calmar ratio of 3.053. 
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{cumulative_net_returns.png}
+\caption{Out-of-Sample Cumulative Net Returns (Almgren-Chriss Execution)}
+\label{fig:cumulative_returns}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{drawdown_profile.png}
+\caption{Out-of-Sample Drawdown Profile}
+\label{fig:drawdown}
+\end{figure}
+
 \subsection{Statistical Significance of Outperformance}
 To definitively reject the null hypothesis that the strategy's outperformance is merely due to sampling error, we apply the Jobson-Korkie robust test (with Memmel's correction) \cite{jobson1981, memmel2003}. We compare the daily return stream of the AOBL-SOS median execution path against the DeMiguel 1/N naive baseline \cite{demiguel2009}. 
 

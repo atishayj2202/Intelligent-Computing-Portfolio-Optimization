@@ -1,0 +1,5 @@
+Jobson-Korkie (Memmel) Test:
+AOBL-SOS Sharpe: 2.039
+1/N Sharpe: 1.037
+Z-Statistic: nan
+P-Value: nan
