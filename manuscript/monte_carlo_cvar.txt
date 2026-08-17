@@ -1,0 +1,1 @@
+1000-Path Block Bootstrap CVaR 95%: -1.28% ± 0.08%

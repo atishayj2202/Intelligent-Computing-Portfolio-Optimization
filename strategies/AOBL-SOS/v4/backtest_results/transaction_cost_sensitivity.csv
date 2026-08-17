@@ -1,0 +1,6 @@
+Transaction Cost,AOBL-SOS Sharpe,SOS Sharpe,Markowitz Sharpe,MinVar Sharpe
+5 bps,1.74 ± 0.22,1.80 ± 0.26,1.82,0.89
+10 bps,1.74 ± 0.22,1.79 ± 0.26,1.82,0.89
+15 bps,1.73 ± 0.22,1.79 ± 0.26,1.82,0.89
+20 bps,1.73 ± 0.22,1.79 ± 0.26,1.81,0.89
+25 bps,1.73 ± 0.22,1.79 ± 0.26,1.81,0.88

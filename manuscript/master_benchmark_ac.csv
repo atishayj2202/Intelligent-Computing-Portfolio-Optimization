@@ -1,0 +1,6 @@
+Portfolio,Execution,Net Ann. Return,Net Ann. Vol,Net Sharpe,Net Sortino,Max Drawdown,Calmar
+AOBL-SOS (Proposed),Almgren-Chriss,22.19% ± 3.05%,12.75% ± 0.43%,1.739 ± 0.221,2.752 ± 0.398,-7.22% ± 1.25%,3.199 ± 0.848
+SOS (Baseline),Almgren-Chriss,22.75% ± 3.76%,12.64% ± 0.56%,1.798 ± 0.258,2.839 ± 0.440,-8.04% ± 1.72%,2.977 ± 0.879
+Max Sharpe (Markowitz),Almgren-Chriss,24.48%,13.44%,1.822,2.896,-10.92%,2.242
+Min Variance,Almgren-Chriss,8.67%,9.69%,0.895,1.444,-8.58%,1.011
+Equal Weight (1/N),Almgren-Chriss,16.54%,13.52%,1.224,2.004,-12.06%,1.371

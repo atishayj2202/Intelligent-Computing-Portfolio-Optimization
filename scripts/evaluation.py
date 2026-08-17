@@ -30,6 +30,20 @@ def obj_sharpe_drawdown(w: np.ndarray, train_returns: np.ndarray, rf_annual: flo
         
     return -score
 
+def obj_sharpe_only(w: np.ndarray, train_returns: np.ndarray, rf_annual: float = 0.02) -> float:
+    """
+    Standard mean-variance objective function for metaheuristics.
+    Goal is to MAXIMIZE: Sharpe
+    We return the negative for minimization.
+    """
+    port_ret = np.dot(train_returns, w)
+    
+    ann_ret = np.mean(port_ret) * 252
+    ann_vol = np.std(port_ret, ddof=1) * np.sqrt(252) + 1e-12
+    sharpe = (ann_ret - rf_annual) / ann_vol
+    
+    return -sharpe
+
 def compute_net_metrics(weights: np.ndarray, test_ret_df: pd.DataFrame, 
                         cost_bps: float = 10.0, rebal_freq: int = 21, 
                         rf_annual: float = 0.02) -> Dict[str, Any]:
