@@ -4,6 +4,7 @@
 \usepackage[margin=1.0in]{geometry}
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{array}
@@ -78,8 +79,27 @@ Unlike standard mean-variance optimization which evaluates solely on the sample 
 \max_{\mathbf{w}} \quad f(\mathbf{w}) = \frac{\text{Sharpe}(\mathbf{w})}{1 + \text{Max\_Drawdown}(\mathbf{w})}
 \end{equation}
 
+\subsection{Symbiotic Organisms Search Mathematical Phases}
+The standard Symbiotic Organisms Search (SOS) mimics the symbiotic interaction strategies that organisms use to survive in an ecosystem. The population matrix $\mathbf{X}$ is iteratively updated through three distinct biological phases:
+
+\textbf{1. Mutualism Phase:} Two randomly selected organisms $\mathbf{x}_i$ and $\mathbf{x}_j$ interact to mutually benefit. A Mutual Vector (MV) is calculated as the average of the two, and both are updated towards the global best organism $\mathbf{x}_{best}$:
+\begin{equation}
+\mathbf{x}_i^{new} = \mathbf{x}_i + \text{rand}(0,1) \cdot (\mathbf{x}_{best} - \mathbf{MV} \cdot BF_1)
+\end{equation}
+\begin{equation}
+\mathbf{x}_j^{new} = \mathbf{x}_j + \text{rand}(0,1) \cdot (\mathbf{x}_{best} - \mathbf{MV} \cdot BF_2)
+\end{equation}
+where $\mathbf{MV} = \frac{\mathbf{x}_i + \mathbf{x}_j}{2}$ and the Benefit Factors $BF_1, BF_2$ are randomly assigned either 1 or 2, dictating whether the organism receives a partial or full benefit from the interaction.
+
+\textbf{2. Commensalism Phase:} Organism $\mathbf{x}_i$ attempts to benefit from $\mathbf{x}_j$ without harming it. The update rule is formulated as:
+\begin{equation}
+\mathbf{x}_i^{new} = \mathbf{x}_i + \text{rand}(-1,1) \cdot (\mathbf{x}_{best} - \mathbf{x}_j)
+\end{equation}
+
+\textbf{3. Parasitism Phase:} A parasite vector $\mathbf{x}_{p}$ is cloned from $\mathbf{x}_i$ and mutated along random dimensions. It acts as an invasive species against a random host $\mathbf{x}_j$. If the fitness $f(\mathbf{x}_p) > f(\mathbf{x}_j)$, the host is eliminated and replaced by the parasite.
+
 \subsection{Adaptive Opposition-Based Learning and Simplex Feasibility}
-The Symbiotic Organisms Search models mutualism, commensalism, and parasitism phases to iteratively update candidate solutions. To prevent algorithmic stagnation, AOBL-SOS tracks the best global fitness $f^*$. If $f^*$ fails to improve by $\epsilon = 10^{-12}$ over $\tau = 15$ continuous iterations, a rank-reversal simplex opposition is triggered for the worst-performing 50\% of the population.
+While SOS is parameter-free, its fundamental flaw in high-dimensional financial spaces is rapid diversity collapse. To prevent algorithmic stagnation, AOBL-SOS tracks the best global fitness $f^*$. If $f^*$ fails to improve by $\epsilon = 10^{-12}$ over $\tau = 15$ continuous iterations, a rank-reversal simplex opposition is triggered for the worst-performing 50\% of the population.
 
 See Appendix A for the formal proof of simplex feasibility, and Appendix B for algorithmic pseudocode.
 
@@ -88,11 +108,11 @@ See Appendix A for the formal proof of simplex feasibility, and Appendix B for a
 The empirical analysis utilizes a universe of $n = 179$ highly liquid constituent stocks from the S\&P 500 index spanning January 1, 2012, to January 1, 2025. 
 
 \subsection{Institutional Almgren-Chriss Market Impact Validation}
-To accurately model institutional execution environments, out-of-sample evaluation strictly imposes the square-root Almgren-Chriss market impact model \cite{almgren2001}. The execution shortfall $\Delta P$ is computed dynamically as:
+To accurately model institutional execution environments, out-of-sample evaluation strictly imposes the square-root Almgren-Chriss market impact model \cite{almgren2001}. Standard backtests often assume zero temporary market impact or a flat basis-point fee, which dangerously overestimates the alpha of high-turnover strategies. When executing large block orders, crossing the bid-ask spread induces non-linear execution costs proportional to the square root of the trading volume. The execution shortfall $\Delta P$ is computed dynamically as:
 \begin{equation}
 \frac{\Delta P}{P} = Y \cdot \sigma \cdot \sqrt{\frac{Q}{V}}
 \end{equation}
-where $\sigma$ is the daily volatility, $Q$ is the absolute dollar volume of the rebalancing trade (assuming a \$100M AUM portfolio), and $V$ is the empirical Average Daily Volume (ADV) in dollars.
+where $\sigma$ is the daily volatility, $Q$ is the absolute dollar volume of the rebalancing trade (assuming a \$100M AUM institutional portfolio to capture realistic capacity constraints), $V$ is the empirical Average Daily Volume (ADV) in dollars, and $Y$ represents a universal scaling constant (typically 0.1). This penalty guarantees that the optimizer does not attempt to excessively trade highly illiquid, micro-cap equities.
 
 \begin{table}[htbp]
 \centering
@@ -116,18 +136,25 @@ Equal Weight (1/N) & 11.19\% & 12.71\% & 0.880 & 1.395 & --11.52\% & 0.971 \\
 
 Table \ref{tab:master_benchmark_ac} demonstrates that even under the severe penalties of the Almgren-Chriss liquidity model, the AOBL-SOS framework exhibits superior drawdown protection (8.25\% max drawdown compared to Ledoit-Wolf's 10.40\% and Markowitz's 10.92\%) resulting in an exceptional Calmar ratio of 3.053. 
 
-\begin{figure}[htbp]
+\begin{figure}[!ht]
 \centering
-\includegraphics[width=0.8\textwidth]{cumulative_net_returns.png}
-\caption{Out-of-Sample Cumulative Net Returns (Almgren-Chriss Execution)}
-\label{fig:cumulative_returns}
-\end{figure}
+\begin{subfigure}{\textwidth}
+  \centering
+  \includegraphics[width=0.85\textwidth]{cumulative_net_returns.png}
+  \caption{Out-of-Sample Cumulative Net Returns}
+  \label{fig:cumulative_returns}
+\end{subfigure}
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{drawdown_profile.png}
-\caption{Out-of-Sample Drawdown Profile}
-\label{fig:drawdown}
+\vspace{0.5cm}
+
+\begin{subfigure}{\textwidth}
+  \centering
+  \includegraphics[width=0.85\textwidth]{drawdown_profile.png}
+  \caption{Out-of-Sample Drawdown Profile}
+  \label{fig:drawdown}
+\end{subfigure}
+\caption{Performance Analysis (Almgren-Chriss Execution)}
+\label{fig:combined_performance}
 \end{figure}
 
 \subsection{Statistical Significance of Outperformance}
@@ -160,7 +187,12 @@ To evaluate the extreme limit of the strategy's viability, we stress-test the ne
 Table \ref{tab:cost_sensitivity} reveals that AOBL-SOS is profoundly resilient to excessive execution friction, decaying by only 0.01 Sharpe points as trading costs increase by 5x (from 5 bps to 25 bps).
 
 \subsection{1000-Path Monte Carlo Tail-Risk Assessment}
-To definitively prove out-of-sample resilience against severe capital impairment, we deploy a 1,000-path block-bootstrap Monte Carlo simulation \cite{bailey2014, prado2018}. The empirical Conditional Value-at-Risk (CVaR) at the 95\% confidence interval was rigorously resampled across 1,000 unique out-of-sample trajectories. The resulting distribution confirms a terminal CVaR (95\%) of $-1.28\% \pm 0.08\%$. 
+To definitively prove out-of-sample resilience against severe capital impairment, we deploy a 1,000-path block-bootstrap Monte Carlo simulation \cite{bailey2014, prado2018}. Conditional Value-at-Risk (CVaR) at significance level $\alpha$ is defined mathematically as the expected loss given that the loss strictly exceeds the Value-at-Risk (VaR) threshold:
+\begin{equation}
+\text{CVaR}_\alpha = \frac{1}{1-\alpha} \int_{f(\mathbf{w}, r) \ge \text{VaR}_\alpha} f(\mathbf{w}, r) \, p(r) \, dr
+\end{equation}
+
+The empirical CVaR at the 95\% confidence interval was rigorously resampled across 1,000 unique out-of-sample trajectories. The resulting distribution confirms a terminal CVaR (95\%) of $-1.28\% \pm 0.08\%$. 
 
 \begin{figure}[htbp]
 \centering
