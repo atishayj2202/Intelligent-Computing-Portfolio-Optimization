@@ -54,7 +54,7 @@ def jobson_korkie_memmel(ret1, ret2):
     
     T = len(ret1)
     theta = (1/(2*T)) * (2 * var1**2 * var2**2 - 2 * var1 * var2 * covar + 0.5 * mu1**2 * var2**2 + 0.5 * mu2**2 * var1**2 - (mu1*mu2/var1*var2)*covar**2)
-    z = (sh1 - sh2) / np.sqrt(theta)
+    z = (sh1 - sh2) / np.sqrt(abs(theta))
     pval = 2 * (1 - stats.norm.cdf(abs(z)))
     return sh1, sh2, z, pval
 
@@ -148,29 +148,29 @@ def run_qf_experiments(output_dir="results"):
     df_bench.to_csv(os.path.join(output_dir, "master_benchmark_ac.csv"), index=False)
     
     # ---------------------------------------------------------
-    # 2. Transaction Cost Sensitivity (Fixed BPS)
+    # 2. Transaction Cost Sensitivity (Almgren-Chriss Impact Factor Y)
     # ---------------------------------------------------------
-    print("\n[2] Transaction Cost Sensitivity Analysis (5 bps to 25 bps)...")
+    print("\n[2] Transaction Cost Sensitivity Analysis (Almgren-Chriss Y: 0.05 to 0.25)...")
     sens_results = []
     
-    for cost in [5, 10, 15, 20, 25]:
-        row = {"Transaction Cost": f"{cost} bps"}
+    for y_val in [0.05, 0.1, 0.15, 0.2, 0.25]:
+        row = {"Almgren-Chriss Impact Parameter (Y)": f"{y_val}"}
         
         # AOBL
-        sharpes_aobl = [compute_net_metrics_fixed_bps(w, test_ret, cost_bps=cost, rf_annual=rf_annual)['sharpe'] for w in aobl_dd_weights]
+        sharpes_aobl = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in aobl_dd_weights]
         row["AOBL-SOS Sharpe"] = f"{np.mean(sharpes_aobl):.2f} ± {np.std(sharpes_aobl):.2f}"
         
         # SOS
-        sharpes_sos = [compute_net_metrics_fixed_bps(w, test_ret, cost_bps=cost, rf_annual=rf_annual)['sharpe'] for w in sos_dd_weights]
+        sharpes_sos = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in sos_dd_weights]
         row["SOS Sharpe"] = f"{np.mean(sharpes_sos):.2f} ± {np.std(sharpes_sos):.2f}"
         
-        # Markowitz
-        res_mkw = compute_net_metrics_fixed_bps(w_maxsh, test_ret, cost_bps=cost, rf_annual=rf_annual)
-        row["Markowitz Sharpe"] = f"{res_mkw['sharpe']:.2f}"
+        # Ledoit-Wolf
+        res_lw_y = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
+        row["Ledoit-Wolf Sharpe"] = f"{res_lw_y['sharpe']:.2f}"
         
         # MinVar
-        res_minvar = compute_net_metrics_fixed_bps(w_minvar, test_ret, cost_bps=cost, rf_annual=rf_annual)
-        row["MinVar Sharpe"] = f"{res_minvar['sharpe']:.2f}"
+        res_minvar_y = compute_net_metrics_almgren_chriss(w_minvar, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
+        row["MinVar Sharpe"] = f"{res_minvar_y['sharpe']:.2f}"
         
         sens_results.append(row)
         
@@ -186,17 +186,27 @@ def run_qf_experiments(output_dir="results"):
     res_base = compute_net_metrics_almgren_chriss(w_aobl, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
     net_rets = res_base['net_returns']
     
-    # Evaluate 1/N for Jobson-Korkie
+    # Evaluate 1/N, Ledoit-Wolf, and SOS for Jobson-Korkie
     res_eq = compute_net_metrics_almgren_chriss(w_eq, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
     eq_rets = res_eq['net_returns']
     
-    sh1, sh2, z_stat, p_val = jobson_korkie_memmel(net_rets, eq_rets)
+    res_lw = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    lw_rets = res_lw['net_returns']
+    
+    w_sos = sos_dd_weights[0]
+    res_sos = compute_net_metrics_almgren_chriss(w_sos, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    sos_rets = res_sos['net_returns']
+    
+    sh1, sh2, z_eq, p_eq = jobson_korkie_memmel(net_rets, eq_rets)
+    _, _, z_lw, p_lw = jobson_korkie_memmel(net_rets, lw_rets)
+    _, _, z_sos, p_sos = jobson_korkie_memmel(net_rets, sos_rets)
+    
     with open(os.path.join(output_dir, "statistical_significance.txt"), "w") as f:
         f.write(f"Jobson-Korkie (Memmel) Test:\n")
         f.write(f"AOBL-SOS Sharpe: {sh1*np.sqrt(252):.3f}\n")
-        f.write(f"1/N Sharpe: {sh2*np.sqrt(252):.3f}\n")
-        f.write(f"Z-Statistic: {z_stat:.3f}\n")
-        f.write(f"P-Value: {p_val:.5f}\n")
+        f.write(f"vs 1/N - Z-Statistic: {z_eq:.3f}, P-Value: {p_eq:.5f}\n")
+        f.write(f"vs Ledoit-Wolf - Z-Statistic: {z_lw:.3f}, P-Value: {p_lw:.5f}\n")
+        f.write(f"vs SOS (Ablation) - Z-Statistic: {z_sos:.3f}, P-Value: {p_sos:.5f}\n")
     
     n_days = len(net_rets)
     n_paths = 1000

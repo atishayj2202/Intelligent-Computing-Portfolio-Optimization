@@ -80,7 +80,7 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
         'net_returns': net_returns
     }
 
-def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.0):
+def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.0, Y=0.1):
     returns = test_ret_df.values
     adv_dollars = test_vol_df.values
     
@@ -91,9 +91,6 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
     
     # Sigma is historical daily volatility
     sigma = np.std(train_ret_df.values, axis=0, ddof=1)
-    
-    # Almgren-Chriss Parameter (Dimensionless scaling factor Y)
-    Y = 0.1 
     
     n_days, n_assets = returns.shape
     
