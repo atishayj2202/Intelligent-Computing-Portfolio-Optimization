@@ -58,7 +58,7 @@ def jobson_korkie_memmel(ret1, ret2):
     pval = 2 * (1 - stats.norm.cdf(abs(z)))
     return sh1, sh2, z, pval
 
-def run_qf_experiments(output_dir="strategies/AOBL-SOS/v4/backtest_results"):
+def run_qf_experiments(output_dir="results"):
     os.makedirs(output_dir, exist_ok=True)
     
     set_seed(42)
