@@ -163,18 +163,20 @@ where $\sigma$ is the daily volatility, $Q$ is the absolute dollar volume of the
 
 \begin{table}[htbp]
 \centering
+\small
+\setlength{\tabcolsep}{4pt}
 \caption{Net-of-Cost Benchmark Analysis (Almgren-Chriss Execution, Monthly Rebalancing, 2023-2025)}
 \label{tab:master_benchmark_ac}
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Portfolio} & \makecell{\textbf{Net Ann.} \\ \textbf{Return}} & \makecell{\textbf{Net Ann.} \\ \textbf{Vol}} & \makecell{\textbf{Net} \\ \textbf{Sharpe}} & \makecell{\textbf{Net} \\ \textbf{Sortino}} & \makecell{\textbf{Max} \\ \textbf{Drawdown}} & \textbf{Calmar} \\
 \midrule
-\textbf{AOBL-SOS (Proposed)} & \textbf{24.18\% $\pm$ 2.60\%} & \textbf{12.51\% $\pm$ 0.44\%} & \textbf{1.931 $\pm$ 0.177} & \textbf{3.122 $\pm$ 0.328} & \textbf{--8.25\% $\pm$ 1.70\%} & \textbf{3.053 $\pm$ 0.688} \\
-SOS (Baseline) & 22.49\% $\pm$ 1.81\% & 13.09\% $\pm$ 0.73\% & 1.718 $\pm$ 0.106 & 2.723 $\pm$ 0.161 & --7.06\% $\pm$ 0.97\% & 3.247 $\pm$ 0.529 \\
-Max Sharpe (Markowitz) & 21.81\% & 13.08\% & 1.667 & 2.596 & --10.92\% & 1.997 \\
-Ledoit-Wolf Shrinkage & 18.50\% & 12.48\% & 1.482 & 2.327 & --10.40\% & 1.778 \\
+\textbf{AOBL-SOS} & \textbf{24.18\% $\pm$ 2.60\%} & \textbf{12.51\% $\pm$ 0.44\%} & \textbf{1.931 $\pm$ 0.177} & \textbf{3.122 $\pm$ 0.328} & \textbf{--8.25\% $\pm$ 1.70\%} & \textbf{3.053 $\pm$ 0.688} \\
+SOS & 22.49\% $\pm$ 1.81\% & 13.09\% $\pm$ 0.73\% & 1.718 $\pm$ 0.106 & 2.723 $\pm$ 0.161 & --7.06\% $\pm$ 0.97\% & 3.247 $\pm$ 0.529 \\
+Max Sharpe & 21.81\% & 13.08\% & 1.667 & 2.596 & --10.92\% & 1.997 \\
+Ledoit-Wolf & 18.50\% & 12.48\% & 1.482 & 2.327 & --10.40\% & 1.778 \\
 Min Variance & 7.84\% & 9.73\% & 0.806 & 1.324 & --9.70\% & 0.808 \\
-Equal Weight (1/N) & 11.19\% & 12.71\% & 0.880 & 1.395 & --11.52\% & 0.971 \\
+Equal Weight & 11.19\% & 12.71\% & 0.880 & 1.395 & --11.52\% & 0.971 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -218,7 +220,7 @@ To evaluate the extreme limit of the strategy's viability, we stress-test the ne
 \label{tab:cost_sensitivity}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Transaction Cost} & \textbf{AOBL-SOS Sharpe} & \textbf{SOS Sharpe} & \textbf{Ledoit-Wolf Sharpe} & \textbf{MinVar Sharpe} \\
+\textbf{Transaction Cost} & \makecell{\textbf{AOBL-SOS} \\ \textbf{Sharpe}} & \makecell{\textbf{SOS} \\ \textbf{Sharpe}} & \makecell{\textbf{Ledoit-Wolf} \\ \textbf{Sharpe}} & \makecell{\textbf{MinVar} \\ \textbf{Sharpe}} \\
 \midrule
 5 bps & \textbf{1.74 $\pm$ 0.22} & 1.80 $\pm$ 0.26 & 1.83 & 0.89 \\
 10 bps & \textbf{1.74 $\pm$ 0.22} & 1.79 $\pm$ 0.26 & 1.83 & 0.89 \\
@@ -258,7 +260,10 @@ The empirical CVaR at the 95\% confidence interval was rigorously resampled acro
 \end{figure}
 
 \section{Conclusion}
+
 This study proposed an Adaptive Opposition-Based Learning algorithm to navigate non-convex institutional constraints. The integration of a drawdown penalty directly into the fitness formulation enables the metaheuristic to avoid fragile configurations that collapse out-of-sample. Rigorous validation utilizing the Almgren-Chriss model and Jobson-Korkie statistics confirmed statistical and economic significance, providing quantitative allocation desks with a robust framework for managing $K$-cardinality portfolios under structural stress.
+
+Future research could explore the application of the AOBL-SOS architecture within alternative asset classes, such as highly volatile cryptocurrency ecosystems or private credit portfolios, where non-normal distributions and liquidity friction are even more pronounced. Additionally, integrating strict Environmental, Social, and Governance (ESG) scoring bounds as a fourth mathematical constraint could further validate the metaheuristic's utility in modern institutional compliance frameworks, proving its adaptability beyond traditional equity universes.
 
 \section{Declarations}
 \subsection*{Acknowledgments}
