@@ -158,19 +158,19 @@ def run_qf_experiments(output_dir="results"):
         
         # AOBL
         sharpes_aobl = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in aobl_dd_weights]
-        row["AOBL-SOS Sharpe"] = f"{np.mean(sharpes_aobl):.2f} ± {np.std(sharpes_aobl):.2f}"
+        row["AOBL-SOS Sharpe"] = f"{np.mean(sharpes_aobl):.3f} ± {np.std(sharpes_aobl):.3f}"
         
         # SOS
         sharpes_sos = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in sos_dd_weights]
-        row["SOS Sharpe"] = f"{np.mean(sharpes_sos):.2f} ± {np.std(sharpes_sos):.2f}"
+        row["SOS Sharpe"] = f"{np.mean(sharpes_sos):.3f} ± {np.std(sharpes_sos):.3f}"
         
         # Ledoit-Wolf
         res_lw_y = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
-        row["Ledoit-Wolf Sharpe"] = f"{res_lw_y['sharpe']:.2f}"
+        row["Ledoit-Wolf Sharpe"] = f"{res_lw_y['sharpe']:.3f}"
         
         # MinVar
         res_minvar_y = compute_net_metrics_almgren_chriss(w_minvar, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
-        row["MinVar Sharpe"] = f"{res_minvar_y['sharpe']:.2f}"
+        row["MinVar Sharpe"] = f"{res_minvar_y['sharpe']:.3f}"
         
         sens_results.append(row)
         
