@@ -1,0 +1,3 @@
+Weight Stability (WS): 0.9567
+Mean Jaccard Overlap: 0.2689
+Top 5 Consistently Selected Assets: NOC, ORLY, REGN, TSLA, NFLX

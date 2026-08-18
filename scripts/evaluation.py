@@ -1,126 +1,158 @@
 import numpy as np
 import pandas as pd
-from typing import Dict, Any
 
-def obj_sharpe_drawdown(w: np.ndarray, train_returns: np.ndarray, rf_annual: float = 0.02) -> float:
-    """
-    Risk-aware objective function for metaheuristics.
-    Evaluates historical path-dependent Max Drawdown and Sharpe Ratio.
-    Goal is to MAXIMIZE: Sharpe / (1 + Max_Drawdown)
-    We return the negative for minimization.
-    """
-    port_ret = np.dot(train_returns, w)
+def obj_sharpe_drawdown(w, train_ret, rf_annual=0.0, lambda_dd=1.0):
+    port_ret = np.dot(train_ret, w)
     
-    ann_ret = np.mean(port_ret) * 252
+    ann_ret = np.mean(port_ret) * 252 - rf_annual
     ann_vol = np.std(port_ret, ddof=1) * np.sqrt(252) + 1e-12
-    sharpe = (ann_ret - rf_annual) / ann_vol
+    sharpe = ann_ret / ann_vol
     
-    # Calculate Max Drawdown
-    cum_returns = np.cumprod(1 + port_ret)
-    peaks = np.maximum.accumulate(cum_returns)
-    drawdowns = (peaks - cum_returns) / peaks
-    max_dd = np.max(drawdowns)
+    cum_ret = np.cumprod(1 + port_ret)
+    running_max = np.maximum.accumulate(cum_ret)
+    drawdowns = cum_ret / running_max - 1.0
+    max_dd = np.min(drawdowns)
     
-    # Penalize portfolios with severe drawdowns
-    # If sharpe is negative, we just want to minimize it further
-    if sharpe > 0:
-        score = sharpe / (1.0 + max_dd)
-    else:
-        score = sharpe * (1.0 + max_dd)
-        
-    return -score
+    penalty = lambda_dd * abs(max_dd)
+    return -(sharpe - penalty)
 
-def obj_sharpe_only(w: np.ndarray, train_returns: np.ndarray, rf_annual: float = 0.02) -> float:
-    """
-    Standard mean-variance objective function for metaheuristics.
-    Goal is to MAXIMIZE: Sharpe
-    We return the negative for minimization.
-    """
-    port_ret = np.dot(train_returns, w)
+def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf_annual=0.0):
+    returns = test_ret_df.values
+    n_days, n_assets = returns.shape
     
-    ann_ret = np.mean(port_ret) * 252
-    ann_vol = np.std(port_ret, ddof=1) * np.sqrt(252) + 1e-12
-    sharpe = (ann_ret - rf_annual) / ann_vol
+    port_val = 1.0
+    val_history = []
     
-    return -sharpe
-
-def compute_net_metrics(weights: np.ndarray, test_ret_df: pd.DataFrame, 
-                        cost_bps: float = 10.0, rebal_freq: int = 21, 
-                        rf_annual: float = 0.02) -> Dict[str, Any]:
-    """
-    Computes out-of-sample portfolio performance taking into account 
-    rebalancing turnover and transaction costs.
-    """
-    n_days = test_ret_df.shape[0]
-    c = cost_bps / 10000.0
+    current_w = np.copy(w)
+    shares = (port_val * current_w) 
     
-    current_w = weights.copy()
-    daily_net_returns = []
-    turnover_list = []
+    # Initial cost
+    trade_cost = np.sum(np.abs(current_w)) * (cost_bps / 10000.0)
+    port_val -= trade_cost
+    
+    turnovers = []
     
     for t in range(n_days):
-        day_ret = test_ret_df.iloc[t].values
-        gross_r = np.dot(current_w, day_ret)
+        day_ret = returns[t]
+        # End of day prices theoretically
+        shares = shares * (1 + day_ret)
+        port_val = np.sum(shares)
         
-        if t > 0 and t % rebal_freq == 0:
-            target_w = weights.copy()
-            turnover = np.sum(np.abs(target_w - current_w))
-            cost = turnover * c
-            net_r = gross_r - cost
-            turnover_list.append(turnover)
-            current_w = target_w.copy()
-        else:
-            net_r = gross_r
-            current_w = current_w * (1 + day_ret)
-            s = np.sum(current_w)
-            if s > 0:
-                current_w = current_w / s
-                
-        daily_net_returns.append(net_r)
+        if (t + 1) % rebal_freq == 0 and t < n_days - 1:
+            target_holdings = port_val * w
+            trades = np.abs(target_holdings - shares)
+            cost = np.sum(trades) * (cost_bps / 10000.0)
+            port_val -= cost
+            shares = target_holdings - (trades * (cost_bps / 10000.0))
+            
+            turnovers.append(np.sum(trades) / port_val)
+            
+        val_history.append(port_val)
         
-    daily_net_returns = np.array(daily_net_returns)
-    cum_ret = np.cumprod(1 + daily_net_returns)
+    val_history = np.array(val_history)
+    net_returns = np.insert(np.diff(val_history) / val_history[:-1], 0, val_history[0]-1)
     
-    ann_return = np.mean(daily_net_returns) * 252
-    ann_vol = np.std(daily_net_returns, ddof=1) * np.sqrt(252) + 1e-12
-    sharpe = (ann_return - rf_annual) / ann_vol
+    ann_ret = np.mean(net_returns) * 252 - rf_annual
+    ann_vol = np.std(net_returns, ddof=1) * np.sqrt(252) + 1e-12
+    sharpe = ann_ret / ann_vol
     
-    downside = daily_net_returns[daily_net_returns < 0]
-    downside_std = np.std(downside, ddof=1) * np.sqrt(252) if len(downside) > 0 else 1e-12
-    sortino = (ann_return - rf_annual) / downside_std
+    downside = net_returns[net_returns < 0]
+    sortino = (ann_ret) / (np.std(downside, ddof=1) * np.sqrt(252) + 1e-12) if len(downside) > 0 else np.nan
     
-    peaks = np.maximum.accumulate(cum_ret)
-    drawdowns = (peaks - cum_ret) / peaks
-    max_dd = np.max(drawdowns)
+    cum_ret = np.cumprod(1 + net_returns)
+    running_max = np.maximum.accumulate(cum_ret)
+    drawdowns = cum_ret / running_max - 1.0
+    max_dd = np.min(drawdowns)
     
-    avg_turnover = np.mean(turnover_list) if len(turnover_list) > 0 else 0.0
+    calmar = ann_ret / abs(max_dd) if max_dd < 0 else np.nan
     
-    # Calmar Ratio: annualized return / max drawdown
-    calmar = ann_return / max_dd if max_dd > 1e-12 else 0.0
-    
-    # CVaR (Expected Shortfall) at 95% confidence
-    var_95 = np.percentile(daily_net_returns, 5)
-    cvar_95 = np.mean(daily_net_returns[daily_net_returns <= var_95]) if np.any(daily_net_returns <= var_95) else var_95
-    
-    # Higher moments
-    skewness = float(pd.Series(daily_net_returns).skew())
-    kurtosis = float(pd.Series(daily_net_returns).kurtosis())  # excess kurtosis
-    
-    # Hit rate (% of positive return days)
-    hit_rate = np.mean(daily_net_returns > 0)
+    cvar_95 = np.percentile(net_returns, 5)
     
     return {
-        "ann_return": ann_return,
-        "ann_vol": ann_vol,
-        "sharpe": sharpe,
-        "sortino": sortino,
-        "max_drawdown": max_dd,
-        "calmar": calmar,
-        "cvar_95": cvar_95,
-        "skewness": skewness,
-        "kurtosis": kurtosis,
-        "hit_rate": hit_rate,
-        "avg_turnover": avg_turnover,
-        "cum_returns": cum_ret,
-        "daily_returns": daily_net_returns
+        'ann_return': ann_ret,
+        'ann_vol': ann_vol,
+        'sharpe': sharpe,
+        'sortino': sortino,
+        'max_drawdown': max_dd,
+        'calmar': calmar,
+        'cvar_95': cvar_95,
+        'avg_turnover': np.mean(turnovers) if len(turnovers) > 0 else 0.0,
+        'net_returns': net_returns
+    }
+
+def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.0, Y=0.1):
+    returns = test_ret_df.values
+    adv_dollars = test_vol_df.values
+    
+    # Fallback to mean ADV if a day has 0 volume or missing
+    col_means = np.nanmean(adv_dollars, axis=0)
+    inds = np.where(np.isnan(adv_dollars) | (adv_dollars == 0))
+    adv_dollars[inds] = np.take(col_means, inds[1])
+    
+    # Sigma is historical daily volatility
+    sigma = np.std(train_ret_df.values, axis=0, ddof=1)
+    
+    n_days, n_assets = returns.shape
+    
+    port_val = aum
+    val_history = []
+    
+    current_w = np.copy(w)
+    shares_val = port_val * current_w
+    
+    # Initial trades
+    trades_dollar = np.abs(shares_val)
+    initial_adv = adv_dollars[0]
+    
+    slippage_frac = Y * sigma * np.sqrt(trades_dollar / (initial_adv + 1e-9))
+    slippage_dollar = np.sum(slippage_frac * trades_dollar)
+    
+    port_val -= slippage_dollar
+    shares_val = port_val * current_w # Re-adjust after cost
+    
+    for t in range(n_days):
+        day_ret = returns[t]
+        shares_val = shares_val * (1 + day_ret)
+        port_val = np.sum(shares_val)
+        
+        if (t + 1) % rebal_freq == 0 and t < n_days - 1:
+            target_val = port_val * w
+            trades = np.abs(target_val - shares_val)
+            
+            day_adv = adv_dollars[t]
+            slippage_f = Y * sigma * np.sqrt(trades / (day_adv + 1e-9))
+            slippage_f = np.clip(slippage_f, 0, 0.05)
+            
+            cost = np.sum(slippage_f * trades)
+            port_val -= cost
+            shares_val = target_val - (slippage_f * trades)
+            
+        val_history.append(port_val)
+        
+    val_history = np.array(val_history)
+    net_returns = np.insert(np.diff(val_history) / val_history[:-1], 0, val_history[0]/aum - 1)
+    
+    ann_ret = np.mean(net_returns) * 252 - rf_annual
+    ann_vol = np.std(net_returns, ddof=1) * np.sqrt(252) + 1e-12
+    sharpe = ann_ret / ann_vol
+    
+    downside = net_returns[net_returns < 0]
+    sortino = (ann_ret) / (np.std(downside, ddof=1) * np.sqrt(252) + 1e-12) if len(downside) > 0 else np.nan
+    
+    cum_ret = np.cumprod(1 + net_returns)
+    running_max = np.maximum.accumulate(cum_ret)
+    drawdowns = cum_ret / running_max - 1.0
+    max_dd = np.min(drawdowns)
+    calmar = ann_ret / abs(max_dd) if max_dd < 0 else np.nan
+    cvar_95 = np.percentile(net_returns, 5)
+    
+    return {
+        'ann_return': ann_ret,
+        'ann_vol': ann_vol,
+        'sharpe': sharpe,
+        'sortino': sortino,
+        'max_drawdown': max_dd,
+        'calmar': calmar,
+        'cvar_95': cvar_95,
+        'net_returns': net_returns
     }

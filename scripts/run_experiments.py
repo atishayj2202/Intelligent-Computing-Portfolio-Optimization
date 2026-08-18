@@ -2,13 +2,15 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+import scipy.stats as stats
+from sklearn.covariance import LedoitWolf
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from scripts.utils import set_seed, normalize_cap_cardinality, load_data
 from scripts.algorithms import AOBL_SOS, SOS
-from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics
+from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_fixed_bps, compute_net_metrics_almgren_chriss
 
 def min_variance_portfolio(cov, cap=0.20, K=30):
     n = cov.shape[0]
@@ -37,315 +39,259 @@ def inverse_volatility_portfolio(cov, cap=0.20, K=30):
     inv_vols = 1.0 / (vols + 1e-12)
     return normalize_cap_cardinality(inv_vols, cap, K)
 
-def run_jpm_experiments(output_dir="manuscript"):
+def ledoit_wolf_portfolio(mu, train_ret, rf_daily, cap=0.20, K=30):
+    lw = LedoitWolf().fit(train_ret)
+    cov_lw = lw.covariance_
+    return max_sharpe_portfolio(mu, cov_lw, rf_daily, cap, K)
+
+def jobson_korkie_memmel(ret1, ret2):
+    mu1, mu2 = np.mean(ret1), np.mean(ret2)
+    var1, var2 = np.var(ret1, ddof=1), np.var(ret2, ddof=1)
+    covar = np.cov(ret1, ret2)[0, 1]
+    
+    sh1 = mu1 / np.sqrt(var1)
+    sh2 = mu2 / np.sqrt(var2)
+    
+    T = len(ret1)
+    theta = (1/(2*T)) * (2 * var1**2 * var2**2 - 2 * var1 * var2 * covar + 0.5 * mu1**2 * var2**2 + 0.5 * mu2**2 * var1**2 - (mu1*mu2/var1*var2)*covar**2)
+    z = (sh1 - sh2) / np.sqrt(abs(theta))
+    pval = 2 * (1 - stats.norm.cdf(abs(z)))
+    return sh1, sh2, z, pval
+
+def run_qf_experiments(output_dir="results"):
     os.makedirs(output_dir, exist_ok=True)
     
     set_seed(42)
     data_path = "data/sp500_daily.csv"
-    if not os.path.exists(data_path):
-        data_path = "../../data/sp500_daily.csv"
         
-    tickers, mu, cov, train_ret, test_ret = load_data(data_path, n_stocks=179, seed=42)
+    tickers, mu, cov, train_ret, test_ret, test_vol = load_data(data_path, n_stocks=150, seed=42)
     
     cap = 0.20
     K = 30
     rf_annual = 0.02
     rf_daily = rf_annual / 252
+    aum = 100_000_000
     
-    print("Optimizing Portfolios...")
+    print("Optimizing Portfolios (10 Seeds for stochastic metaheuristics)...")
     dim = len(mu)
-    
     map_func = lambda w: normalize_cap_cardinality(w, cap=cap, K=K)
-    obj = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual)
+    obj_dd = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual)
     
-    pop = np.random.uniform(0.0, 1.0, (50, dim))
-    pop = np.array([map_func(p) for p in pop])
+    n_seeds = 10
+    aobl_dd_weights = []
+    sos_dd_weights = []
     
-    print("  Running AOBL-SOS...")
-    _, w_aobl, aobl_curve = AOBL_SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True, 
-                            init_obl=True, obl_mode="portfolio_reversal", cap=cap, K=K)
-    
-    print("  Running Standard SOS...")
-    _, w_sos, sos_curve = SOS(obj, pop.copy(), map_func, iters=300, is_portfolio=True)
-    
-    print("  Computing Min Variance...")
+    for seed in range(n_seeds):
+        set_seed(seed)
+        pop = np.random.uniform(0.0, 1.0, (50, dim))
+        pop = np.array([map_func(p) for p in pop])
+        
+        _, w1, _ = AOBL_SOS(obj_dd, pop.copy(), map_func, iters=300, is_portfolio=True, init_obl=True, obl_mode="portfolio_reversal", cap=cap, K=K)
+        aobl_dd_weights.append(w1)
+        
+        _, w3, _ = SOS(obj_dd, pop.copy(), map_func, iters=300, is_portfolio=True)
+        sos_dd_weights.append(w3)
+        
     w_minvar = min_variance_portfolio(cov, cap=cap, K=K)
-    
-    print("  Computing Max Sharpe (Markowitz)...")
     w_maxsh = max_sharpe_portfolio(mu, cov, rf_daily, cap=cap, K=K)
-    
-    print("  Computing Risk Parity (Inv-Vol)...")
-    w_invvol = inverse_volatility_portfolio(cov, cap=cap, K=K)
-    
+    w_lw = ledoit_wolf_portfolio(mu, train_ret.values, rf_daily, cap=cap, K=K)
     w_eq = normalize_cap_cardinality(np.ones(dim), cap=cap, K=K)
     
-    portfolios = {
-        "AOBL-SOS (Proposed)": w_aobl,
+    # ---------------------------------------------------------
+    # 1. Almgren-Chriss Master Benchmark Table
+    # ---------------------------------------------------------
+    print("\n[1] Evaluating Master Benchmark Table (Almgren-Chriss Market Impact)...")
+    
+    def fmt(m, s, is_pct=False):
+        if is_pct:
+            return f"{m*100:.2f}% ± {s*100:.2f}%"
+        return f"{m:.3f} ± {s:.3f}"
+
+    bench_results = []
+    
+    # Stochastic Models (Almgren-Chriss)
+    for name, w_list in [("AOBL-SOS (Proposed)", aobl_dd_weights), ("SOS (Baseline)", sos_dd_weights)]:
+        results = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual) for w in w_list]
+        m_stds = {k: (np.mean([r[k] for r in results]), np.std([r[k] for r in results])) for k in ['ann_return', 'ann_vol', 'sharpe', 'sortino', 'max_drawdown', 'calmar']}
+        bench_results.append({
+            "Portfolio": name,
+            "Execution": "Almgren-Chriss",
+            "Net Ann. Return": fmt(m_stds['ann_return'][0], m_stds['ann_return'][1], True),
+            "Net Ann. Vol": fmt(m_stds['ann_vol'][0], m_stds['ann_vol'][1], True),
+            "Net Sharpe": fmt(m_stds['sharpe'][0], m_stds['sharpe'][1]),
+            "Net Sortino": fmt(m_stds['sortino'][0], m_stds['sortino'][1]),
+            "Max Drawdown": fmt(m_stds['max_drawdown'][0], m_stds['max_drawdown'][1], True),
+            "Calmar": fmt(m_stds['calmar'][0], m_stds['calmar'][1])
+        })
+
+    # Deterministic Models
+    det_portfolios = {
         "Max Sharpe (Markowitz)": w_maxsh,
-        "SOS (Baseline)": w_sos,
-        "Risk Parity (Inv-Vol)": w_invvol,
+        "Ledoit-Wolf Shrinkage": w_lw,
         "Min Variance": w_minvar,
         "Equal Weight (1/N)": w_eq
     }
-    
-    print("\n[1] Evaluating Master Benchmark Table (10 bps Cost, Monthly Rebal)...")
-    bench_results = []
-    for name, w in portfolios.items():
-        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
+    for name, w in det_portfolios.items():
+        res = compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
         bench_results.append({
             "Portfolio": name,
-            "Cost (bps)": 10,
+            "Execution": "Almgren-Chriss",
             "Net Ann. Return": f"{res['ann_return']*100:.2f}%",
             "Net Ann. Vol": f"{res['ann_vol']*100:.2f}%",
             "Net Sharpe": f"{res['sharpe']:.3f}",
             "Net Sortino": f"{res['sortino']:.3f}",
             "Max Drawdown": f"{res['max_drawdown']*100:.2f}%",
-            "Calmar": f"{res['calmar']:.3f}",
-            "Monthly Turnover": f"{res['avg_turnover']*100:.2f}%"
+            "Calmar": f"{res['calmar']:.3f}"
         })
         
     df_bench = pd.DataFrame(bench_results)
-    df_bench.to_csv(os.path.join(output_dir, "master_benchmark_table.csv"), index=False)
+    df_bench.to_csv(os.path.join(output_dir, "master_benchmark_ac.csv"), index=False)
     
-    print("\n[1b] Generating Institutional Tail-Risk Table...")
-    risk_results = []
-    for name, w in portfolios.items():
-        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
-        risk_results.append({
-            "Portfolio": name,
-            "CVaR 95%": f"{res['cvar_95']*100:.3f}%",
-            "Skewness": f"{res['skewness']:.3f}",
-            "Excess Kurtosis": f"{res['kurtosis']:.3f}",
-            "Hit Rate": f"{res['hit_rate']*100:.1f}%",
-            "Calmar": f"{res['calmar']:.3f}",
-        })
-    df_risk = pd.DataFrame(risk_results)
-    df_risk.to_csv(os.path.join(output_dir, "institutional_risk_metrics.csv"), index=False)
-    print(df_risk.to_string(index=False))
+    # ---------------------------------------------------------
+    # 2. Transaction Cost Sensitivity (Almgren-Chriss Impact Factor Y)
+    # ---------------------------------------------------------
+    print("\n[2] Transaction Cost Sensitivity Analysis (Almgren-Chriss Y: 0.05 to 0.25)...")
+    sens_results = []
     
-    print("\n[1c] Bootstrap Statistical Significance Test (10,000 resamples)...")
-    n_bootstrap = 10000
-    res_aobl_full = compute_net_metrics(w_aobl, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
-    aobl_daily = res_aobl_full["daily_returns"]
-    n_days_test = len(aobl_daily)
-    
-    bootstrap_sharpes = []
-    for _ in range(n_bootstrap):
-        idx = np.random.choice(n_days_test, size=n_days_test, replace=True)
-        sample = aobl_daily[idx]
-        ann_r = np.mean(sample) * 252
-        ann_v = np.std(sample, ddof=1) * np.sqrt(252) + 1e-12
-        bootstrap_sharpes.append((ann_r - rf_annual) / ann_v)
-    bootstrap_sharpes = np.array(bootstrap_sharpes)
-    
-    ci_lower = np.percentile(bootstrap_sharpes, 2.5)
-    ci_upper = np.percentile(bootstrap_sharpes, 97.5)
-    pval = np.mean(bootstrap_sharpes <= 0)
-    
-    bootstrap_results = {
-        "Portfolio": "AOBL-SOS",
-        "Point Estimate (Sharpe)": round(res_aobl_full["sharpe"], 3),
-        "95% CI Lower": round(ci_lower, 3),
-        "95% CI Upper": round(ci_upper, 3),
-        "Bootstrap p-value (Sharpe <= 0)": f"{pval:.4f}",
-        "N Resamples": n_bootstrap
-    }
-    df_boot = pd.DataFrame([bootstrap_results])
-    df_boot.to_csv(os.path.join(output_dir, "bootstrap_significance.csv"), index=False)
-    print(f"  AOBL-SOS Sharpe: {res_aobl_full['sharpe']:.3f}  95% CI: [{ci_lower:.3f}, {ci_upper:.3f}]  p-value: {pval:.4f}")
-    
-    print("\n[2] Transaction Cost Sensitivity Analysis (0, 5, 10, 15 bps)...")
-    cost_levels = [0, 5, 10, 15]
-    tx_results = []
-    for name, w in portfolios.items():
-        for cost in cost_levels:
-            res = compute_net_metrics(w, test_ret, cost_bps=cost, rebal_freq=21, rf_annual=rf_annual)
-            tx_results.append({
-                "Portfolio": name,
-                "Cost_bps": cost,
-                "Net_Sharpe": round(res["sharpe"], 3)
-            })
-            
-    df_tx = pd.DataFrame(tx_results)
-    df_tx.to_csv(os.path.join(output_dir, "transaction_cost_sensitivity.csv"), index=False)
-    
-    print("\n[3] Rebalancing Frequency Analysis...")
-    rebal_results = []
-    freq_map = {"Monthly (21d)": 21, "Quarterly (63d)": 63, "Semi-Annual (126d)": 126}
-    
-    for freq_name, freq_days in freq_map.items():
-        for name, w in portfolios.items():
-            res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=freq_days, rf_annual=rf_annual)
-            rebal_results.append({
-                "Rebalance_Freq": freq_name,
-                "Portfolio": name,
-                "Net_Sharpe": round(res["sharpe"], 3)
-            })
-            
-    df_rebal = pd.DataFrame(rebal_results)
-    df_rebal.to_csv(os.path.join(output_dir, "rebalancing_frequency.csv"), index=False)
-
-    print("\n[4] Generating Cumulative Return Plot...")
-    plt.figure(figsize=(12, 6))
-    colors = ['#D85A30', '#9C27B0', '#378ADD', '#009688', '#FF9800', '#6D4C41']
-    for (name, w), color in zip(portfolios.items(), colors):
-        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
-        lw = 2.5 if "AOBL" in name else 1.8
-        plt.plot(res["cum_returns"], color=color, lw=lw, label=name)
+    for y_val in [0.05, 0.1, 0.15, 0.2, 0.25]:
+        row = {"Almgren-Chriss Impact Parameter (Y)": f"{y_val}"}
         
-    plt.title('Out-of-Sample Cumulative Net Return (10 bps Transaction Cost)', fontsize=13, fontweight='bold')
-    plt.xlabel('Trading Days (2023-2025)')
-    plt.ylabel('Net Portfolio Growth (Base = 1.0)')
-    plt.legend(loc='upper left')
-    plt.grid(True, alpha=0.3)
+        # AOBL
+        sharpes_aobl = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in aobl_dd_weights]
+        row["AOBL-SOS Sharpe"] = f"{np.mean(sharpes_aobl):.3f} ± {np.std(sharpes_aobl):.3f}"
+        
+        # SOS
+        sharpes_sos = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)['sharpe'] for w in sos_dd_weights]
+        row["SOS Sharpe"] = f"{np.mean(sharpes_sos):.3f} ± {np.std(sharpes_sos):.3f}"
+        
+        # Ledoit-Wolf
+        res_lw_y = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
+        row["Ledoit-Wolf Sharpe"] = f"{res_lw_y['sharpe']:.3f}"
+        
+        # MinVar
+        res_minvar_y = compute_net_metrics_almgren_chriss(w_minvar, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual, Y=y_val)
+        row["MinVar Sharpe"] = f"{res_minvar_y['sharpe']:.3f}"
+        
+        sens_results.append(row)
+        
+    df_sens = pd.DataFrame(sens_results)
+    df_sens.to_csv(os.path.join(output_dir, "transaction_cost_sensitivity.csv"), index=False)
+    
+    # ---------------------------------------------------------
+    # 3. 1000-Path Monte Carlo Block Bootstrap (VaR / CVaR)
+    # ---------------------------------------------------------
+    print("\n[3] 1000-Path Block Bootstrap Monte Carlo Simulation...")
+    # Evaluate Seed 0 of AOBL
+    w_aobl = aobl_dd_weights[0]
+    res_base = compute_net_metrics_almgren_chriss(w_aobl, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    net_rets = res_base['net_returns']
+    
+    # Evaluate 1/N, Ledoit-Wolf, and SOS for Jobson-Korkie
+    res_eq = compute_net_metrics_almgren_chriss(w_eq, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    eq_rets = res_eq['net_returns']
+    
+    res_lw = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    lw_rets = res_lw['net_returns']
+    
+    w_sos = sos_dd_weights[0]
+    res_sos = compute_net_metrics_almgren_chriss(w_sos, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    sos_rets = res_sos['net_returns']
+    
+    sh1, sh2, z_eq, p_eq = jobson_korkie_memmel(net_rets, eq_rets)
+    _, _, z_lw, p_lw = jobson_korkie_memmel(net_rets, lw_rets)
+    _, _, z_sos, p_sos = jobson_korkie_memmel(net_rets, sos_rets)
+    
+    with open(os.path.join(output_dir, "statistical_significance.txt"), "w") as f:
+        f.write(f"Jobson-Korkie (Memmel) Test:\n")
+        f.write(f"AOBL-SOS Sharpe: {sh1*np.sqrt(252):.3f}\n")
+        f.write(f"vs 1/N - Z-Statistic: {z_eq:.3f}, P-Value: {p_eq:.5f}\n")
+        f.write(f"vs Ledoit-Wolf - Z-Statistic: {z_lw:.3f}, P-Value: {p_lw:.5f}\n")
+        f.write(f"vs SOS (Ablation) - Z-Statistic: {z_sos:.3f}, P-Value: {p_sos:.5f}\n")
+    
+    n_days = len(net_rets)
+    n_paths = 1000
+    block_size = 10
+    
+    bootstrap_cvar95 = []
+    np.random.seed(42)
+    
+    for _ in range(n_paths):
+        path = []
+        while len(path) < n_days:
+            start_idx = np.random.randint(0, n_days - block_size)
+            path.extend(net_rets[start_idx:start_idx+block_size])
+        path = np.array(path[:n_days])
+        
+        cvar = np.percentile(path, 5)
+        bootstrap_cvar95.append(cvar)
+        
+    mc_cvar_mean = np.mean(bootstrap_cvar95)
+    mc_cvar_std = np.std(bootstrap_cvar95)
+    
+    with open(os.path.join(output_dir, "monte_carlo_cvar.txt"), "w") as f:
+        f.write(f"1000-Path Block Bootstrap CVaR 95%: {mc_cvar_mean*100:.2f}% ± {mc_cvar_std*100:.2f}%\n")
+        
+    plt.figure(figsize=(8, 5))
+    plt.hist(np.array(bootstrap_cvar95)*100, bins=50, color='#D85A30', alpha=0.7, edgecolor='black')
+    plt.axvline(mc_cvar_mean*100, color='red', linestyle='dashed', linewidth=2, label=f'Mean CVaR: {mc_cvar_mean*100:.2f}%')
+    plt.title('Monte Carlo Resampled Out-of-Sample CVaR (95%)')
+    plt.xlabel('CVaR 95% (%)')
+    plt.ylabel('Frequency')
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.savefig(os.path.join(output_dir, "cpcv_distribution.png"), dpi=200)
+    plt.close()
+    
+    # ---------------------------------------------------------
+    # 4. Cumulative Returns & Drawdown Profile Plots
+    # ---------------------------------------------------------
+    print("\n[4] Generating Cumulative Returns and Drawdown Profiles...")
+    
+    # Cumulative Returns
+    cum_aobl = np.cumprod(1 + net_rets)
+    cum_eq = np.cumprod(1 + eq_rets)
+    
+    # Also evaluate Ledoit-Wolf for the plot
+    res_lw = compute_net_metrics_almgren_chriss(w_lw, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+    cum_lw = np.cumprod(1 + res_lw['net_returns'])
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(test_ret.index, cum_aobl, label='AOBL-SOS (Net)', color='#D85A30', linewidth=2)
+    plt.plot(test_ret.index, cum_lw, label='Ledoit-Wolf Shrinkage (Net)', color='steelblue', linewidth=1.5)
+    plt.plot(test_ret.index, cum_eq, label='1/N Equal Weight (Net)', color='gray', linestyle='dashed', linewidth=1.5)
+    plt.title('Out-of-Sample Cumulative Net Returns (Almgren-Chriss Execution)')
+    plt.ylabel('Cumulative Growth')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "cumulative_net_returns.png"), dpi=200)
     plt.close()
     
-    print("\n[4b] Generating Drawdown Profile Plot...")
-    plt.figure(figsize=(12, 5))
-    for (name, w), color in zip(portfolios.items(), colors):
-        res = compute_net_metrics(w, test_ret, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
-        cum_ret = res["cum_returns"]
-        drawdown = cum_ret / np.maximum.accumulate(cum_ret) - 1
-        lw = 2.0 if "AOBL" in name else 1.2
-        plt.plot(drawdown, color=color, lw=lw, label=name)
+    # Drawdown Profile
+    def get_drawdown(cum_ret):
+        peak = np.maximum.accumulate(cum_ret)
+        return (cum_ret - peak) / peak
         
-    plt.title('Out-of-Sample Drawdown Profile (2023-2025)', fontsize=13, fontweight='bold')
-    plt.xlabel('Trading Days')
-    plt.ylabel('Drawdown')
-    plt.legend(loc='lower right')
-    plt.grid(True, alpha=0.3)
+    dd_aobl = get_drawdown(cum_aobl)
+    dd_lw = get_drawdown(cum_lw)
+    dd_eq = get_drawdown(cum_eq)
+    
+    plt.figure(figsize=(10, 4))
+    plt.plot(test_ret.index, dd_aobl * 100, label='AOBL-SOS Drawdown', color='#D85A30', linewidth=1.5)
+    plt.plot(test_ret.index, dd_lw * 100, label='Ledoit-Wolf Drawdown', color='steelblue', linewidth=1)
+    plt.plot(test_ret.index, dd_eq * 100, label='1/N Drawdown', color='gray', linestyle='dashed', linewidth=1)
+    plt.fill_between(test_ret.index, dd_aobl * 100, 0, color='#D85A30', alpha=0.1)
+    plt.title('Out-of-Sample Drawdown Profile')
+    plt.ylabel('Drawdown (%)')
+    plt.xlabel('Date')
+    plt.legend()
+    plt.grid(alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "drawdown_profile.png"), dpi=200)
     plt.close()
-
-    print("\n[4c] Generating AOBL-SOS vs SOS Convergence Analysis...")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(range(1, len(aobl_curve)+1), [-x for x in aobl_curve], color='#D85A30', lw=2.5, label='AOBL-SOS (Proposed)')
-    ax.plot(range(1, len(sos_curve)+1), [-x for x in sos_curve], color='#378ADD', lw=2.0, label='Standard SOS')
-    ax.set_title('Convergence Analysis: Objective Function (Higher = Better)', fontsize=13, fontweight='bold')
-    ax.set_xlabel('Iteration')
-    ax.set_ylabel('Objective Value (Drawdown-Penalized Sharpe)')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(os.path.join(output_dir, "convergence_analysis.png"), dpi=200)
-    plt.close(fig)
-
-    print("\n[5] Walk-Forward Regime Robustness Validation...")
-    walk_forward_results = []
     
-    # Reload full dataset to allow custom slicing
-    df_full = pd.read_csv(data_path, index_col=0, parse_dates=True)
-    returns_full = df_full.pct_change().dropna()
-    
-    # Test the SAME optimized weights across distinct market regimes
-    # This tests regime robustness of the allocation, not re-optimization noise
-    regime_windows = [
-        ("2018", "2018", "Pre-COVID Bull"),
-        ("2019", "2019", "Late-Cycle Expansion"),
-        ("2020", "2020", "COVID Crash & Recovery"),
-        ("2021", "2021", "Post-COVID Rally"),
-        ("2022", "2022", "Rate Hike Drawdown"),
-        ("2023", "2025", "Recent Out-of-Sample")
-    ]
-    
-    regime_portfolios = {
-        "AOBL-SOS": w_aobl,
-        "Markowitz": w_maxsh,
-        "SOS": w_sos,
-        "MinVar": w_minvar,
-        "Equal-Weight": w_eq
-    }
-    
-    for test_start, test_end, regime_label in regime_windows:
-        test_slice = returns_full.loc[f"{test_start}-01-01":f"{test_end}-12-31"]
-        if len(test_slice) == 0:
-            continue
-        
-        row = {"Market Regime": regime_label}
-        for name, w in regime_portfolios.items():
-            res = compute_net_metrics(w, test_slice, cost_bps=10, rebal_freq=21, rf_annual=rf_annual)
-            row[name] = round(res["sharpe"], 2)
-        walk_forward_results.append(row)
-        print(f"  {regime_label}: AOBL-SOS={row['AOBL-SOS']}, Mkwz={row['Markowitz']}, SOS={row['SOS']}")
-    
-    df_wf = pd.DataFrame(walk_forward_results)
-    df_wf.to_csv(os.path.join(output_dir, "walk_forward_table.csv"), index=False)
-
-    print("\n[5b] Generating Walk-Forward Performance Bar Chart...")
-    df_wf_plot = df_wf.set_index("Market Regime")
-    ax = df_wf_plot.plot(kind='bar', figsize=(14, 6), colormap='viridis', edgecolor='black')
-    plt.title('Walk-Forward Out-of-Sample Net Sharpe Ratios', fontsize=14, fontweight='bold')
-    plt.xlabel('Market Regimes')
-    plt.ylabel('Net Sharpe Ratio')
-    plt.xticks(rotation=15)
-    plt.legend(title='Portfolio Strategy')
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "walk_forward_chart.png"), dpi=200)
-    plt.close()
-
-    print("\n[6] Generating AOBL-SOS Portfolio Weights Distribution...")
-    w_active = w_aobl[w_aobl > 1e-4]
-    plt.figure(figsize=(10, 5))
-    plt.bar(range(len(w_active)), sorted(w_active, reverse=True), color='#D85A30', edgecolor='black')
-    plt.axhline(y=0.20, color='red', linestyle='--', label='20% Upper Cap')
-    plt.title(f'AOBL-SOS Active Weights Distribution (K={len(w_active)})', fontsize=13, fontweight='bold')
-    plt.xlabel('Active Asset Rank')
-    plt.ylabel('Allocation Weight')
-    plt.legend()
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "aobl_weights_dist.png"), dpi=200)
-    plt.close()
-
-    print("\n[7] Generating Fama-French 3-Factor Attribution...")
-    try:
-        import pandas_datareader.data as web
-        import statsmodels.api as sm
-        import warnings
-        warnings.filterwarnings('ignore')
-        
-        # Portfolio daily returns (test period)
-        port_ret = test_ret.dot(w_aobl)
-        
-        # Get Fama-French data
-        start_date = port_ret.index.min().strftime('%Y-%m-%d')
-        end_date = port_ret.index.max().strftime('%Y-%m-%d')
-        
-        ff = web.DataReader('F-F_Research_Data_Factors_daily', 'famafrench', start=start_date, end=end_date)[0]
-        # FF data is in percentages (e.g. 1.5 for 1.5%), so divide by 100
-        ff = ff / 100.0
-        
-        # Align indexes
-        port_ret.index = pd.to_datetime(port_ret.index).tz_localize(None)
-        ff.index = pd.to_datetime(ff.index).tz_localize(None)
-        
-        # Merge
-        df_reg = pd.DataFrame({'Port_Ret': port_ret}).join(ff, how='inner').dropna()
-        
-        # Excess return over RF
-        y = df_reg['Port_Ret'] - df_reg['RF']
-        X = df_reg[['Mkt-RF', 'SMB', 'HML']]
-        X = sm.add_constant(X)
-        
-        model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 1})
-        
-        # Save results
-        res_df = pd.DataFrame({
-            'Coefficient': model.params,
-            't-stat': model.tvalues,
-            'p-value': model.pvalues
-        })
-        res_df.to_csv(os.path.join(output_dir, "factor_attribution.csv"))
-        
-        print("  Factor attribution generated successfully.")
-    except Exception as e:
-        print("  Failed to generate factor attribution:", e)
-
-    print("Experiments completed. Output files generated in:", output_dir)
+    print("\nExperiments completed. Output files generated in:", output_dir)
 
 if __name__ == "__main__":
-    run_jpm_experiments()
+    run_qf_experiments()

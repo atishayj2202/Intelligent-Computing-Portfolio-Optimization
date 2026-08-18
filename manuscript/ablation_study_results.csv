@@ -1,0 +1,8 @@
+Ablation Variant,Net Sharpe,Net Ann Return,Max Drawdown,Calmar Ratio
+Variant A (Plain SOS),1.938,24.85%,-9.28%,2.678
+Variant B (Static OBL),2.018,25.16%,-8.96%,2.806
+Variant C (Random Restart),1.938,24.85%,-9.28%,2.678
+Variant D (Adaptive Trigger Only),1.938,24.85%,-9.28%,2.678
+Variant E (Centroid Opposition Only),2.018,25.16%,-8.96%,2.806
+Variant F (Drawdown Only),1.938,24.85%,-9.28%,2.678
+Variant G (Full AOBL-SOS),1.938,24.85%,-9.28%,2.678
