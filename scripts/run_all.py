@@ -75,6 +75,7 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     print("\n[3/7] Running CSCV / PBO / DSR Overfitting Analysis on Real Strategy Grid...")
     windows = get_walk_forward_windows()
     grid_returns_list = []
+    grid_annual_sharpes = []
     
     # Hyperparameter grid: 5 lambdas x 5 Ks = 25 candidate configurations
     lambda_grid = [0.0, 0.5, 1.0, 1.5, 2.0]
@@ -98,6 +99,12 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
                 _, w_cand, _ = AOBL_SOS(obj_func, pop, map_func, iters=100, is_portfolio=True, cap=0.20, K=k_val)
                 res = compute_net_metrics_almgren_chriss(w_cand, test_ret, test_vol, train_ret, aum=100_000_000)
                 cand_chained.extend(res['net_returns'])
+                
+            rets_arr = np.array(cand_chained)
+            ann_r = (np.prod(1 + rets_arr) ** (252.0 / len(rets_arr))) - 1.0 - 0.02
+            ann_v = np.std(rets_arr, ddof=1) * np.sqrt(252) + 1e-12
+            cand_sh = ann_r / ann_v
+            grid_annual_sharpes.append(cand_sh)
             grid_returns_list.append(cand_chained)
             
     strategy_grid_returns = np.column_stack(grid_returns_list)
@@ -106,7 +113,9 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     aobl_series = pd.Series(aobl_rets)
     n_days = len(aobl_rets)
     realized_sr = float(df_wf_agg.loc[df_wf_agg['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].values[0])
-    sr_var = float(np.var([float(df_wf_per_win.loc[df_wf_per_win['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].iloc[i]) for i in range(7)]))
+    
+    # López de Prado (2014) cross-strategy variance across 25 grid candidates
+    sr_var = float(np.var(grid_annual_sharpes, ddof=1))
     
     skew = float(stats.skew(aobl_rets))
     kurt = float(stats.kurtosis(aobl_rets, fisher=False))
