@@ -3,44 +3,86 @@
 **Authors:** Atishaya Jain, Karan Jangra, Vaibhav Pacherwal  
 **Affiliation:** Netaji Subhas University of Technology (NSUT), Delhi  
 
-## Overview
-This repository contains the official replication suite for the manuscript: **"Institutional Portfolio Construction under Cardinality Friction: A Diversity-Aware Adaptive Metaheuristic Framework."**
+---
 
-The project introduces **AOBL-SOS (Adaptive Opposition-Based Learning Symbiotic Organisms Search)**, a feasibility-preserving metaheuristic designed to optimize high-dimensional institutional portfolios under strict, non-convex constraints ($K=30$ cardinality bounds and $W_{\max}=20\%$ position caps).
+## 1. Executive Summary
 
-### Key Research Methodology Features:
-- **Point-in-Time Universe Construction:** Asset selection at each rebalance date uses exclusively past historical availability up to the rebalancing timestamp, eliminating survivorship and look-ahead bias.
-- **Expanding Walk-Forward Protocol:** 7 expanding walk-forward windows (2018–2025 OOS) evaluating continuous out-of-sample chained equity curves.
-- **Feasibility-Preserving Encoding & Centroid-Based Opposition:** Bounded simplex solution encoding $x=(S, \theta)$ combined with adaptive population centroid reflection.
-- **Almgren-Chriss Market Impact Model:** All out-of-sample execution is penalized by the non-linear Almgren-Chriss square-root execution model ($AUM = \$100\text{M}$).
-- **Overfitting & Statistical Validation:** CSCV (Combinatorial Symmetric Cross-Validation), Deflated Sharpe Ratio (DSR), Probabilistic Sharpe Ratio (PSR), Minimum Backtest Length (MinBTL), and Fama-French 6-factor alpha regressions.
+This repository contains the complete, production-ready research and replication suite for the manuscript:  
+**"Institutional Portfolio Construction under Cardinality Friction: A Diversity-Aware Adaptive Metaheuristic Framework."**
 
-## Repository Structure
-- `data/`: End-of-Day historical return and volume data (`sp500_daily.csv`).
-- `manuscript/`: LaTeX source (`paper.tex`), references (`references.bib`), and compiled figure assets.
-- `scripts/`:
-  - `universe.py`: Point-in-time universe construction & walk-forward window definitions.
-  - `utils.py`: Simplex normalization bounds, diversity tracking, and data loaders.
-  - `algorithms.py`: Standard SOS and proposed AOBL-SOS metaheuristic implementations.
-  - `metaheuristics.py`: GA, PSO, and DE metaheuristic baseline competitors.
-  - `ablation.py`: 7-variant algorithmic ablation study module.
-  - `evaluation.py`: Objective functions and Almgren-Chriss market impact execution simulation.
-  - `pbo_cscv.py`: CSCV, PBO, DSR, PSR, and MinBTL statistical functions.
-  - `analysis.py`: Fama-French factor attribution, AUM capacity curves, VIX regime splits, and portfolio stability metrics.
-  - `walk_forward.py`: Expanding walk-forward orchestrator across 7 windows.
-  - `run_all.py`: Master single entry-point execution script.
-- `results/`: Output directory containing generated tables, distributions, and CSV outputs.
+The project introduces **AOBL-SOS** (Adaptive Opposition-Based Learning Symbiotic Organisms Search), a feasibility-preserving optimization framework designed to construct large-scale equity portfolios under strict non-convex operational bounds:
+- **Maximum Cardinality Bound:** $K=30$ active positions.
+- **Maximum Asset Exposure Cap:** $W_{\max}=20\%$ weight constraint per stock.
 
-## Replication Instructions
+---
 
-To replicate the entire research pipeline from scratch, execute:
+## 2. Key Methodological Features
+
+1. **Point-in-Time Universe Construction:** Eliminates survivorship and look-ahead bias by constructing asset universes dynamically at each rebalance timestamp using exclusively historical data available up to `train_end`.
+2. **Expanding Walk-Forward Protocol:** Evaluates out-of-sample performance across 7 expanding walk-forward windows (2018–2024 OOS) on an actual point-in-time S&P 500 equity universe.
+3. **Feasibility-Preserving Encoding & Centroid Opposition:** Bounded simplex solution mapping $x=(S, \theta)$ combined with dynamic centroid-based population opposition and stagnation boosting.
+4. **Almgren-Chriss Market Impact Execution:** Deducts realistic transaction friction using the non-linear square-root Almgren-Chriss execution model ($AUM = \$100\text{M}$).
+5. **Overfitting & Statistical Validation:** CSCV (Combinatorial Symmetric Cross-Validation, $S=16$), Deflated Sharpe Ratio ($\text{DSR} = 0.9522$), Probabilistic Sharpe Ratio ($\text{PSR} = 1.0000$), Implied Hurdle Sharpe ($SR_0 = 0.1951$), and Carhart 4-Factor risk attribution ($\beta_{\text{MKT}}=0.924, \beta_{\text{HML}}=0.291, \beta_{\text{MOM}}=0.638$).
+
+---
+
+## 3. Clean Repository Structure
+
+```
+.
+├── data/
+│   └── sp500_daily.csv                  # Point-in-time S&P 500 daily price & volume data
+├── manuscript/
+│   ├── paper.tex                         # Complete LaTeX manuscript source
+│   ├── references.bib                    # Institutional BibTeX bibliography database
+│   ├── *.csv                             # Generated empirical tables synced for LaTeX
+│   └── *.png                             # High-resolution vector figures embedded in manuscript
+├── results/
+│   ├── master_walk_forward_chained.csv   # Master out-of-sample walk-forward performance metrics
+│   ├── ablation_study_results.csv        # 6-variant walk-forward ablation results
+│   ├── pbo_dsr_results.txt               # PBO, DSR, PSR, and Hurdle Sharpe validation output
+│   ├── fama_french_attribution.txt       # Carhart 4-Factor linear regression attribution
+│   └── *.png                             # Plot figures (Equity Curves, Drawdown, Diversity)
+├── scratch/
+│   └── verify_all.py                     # Master calculation & manuscript data verification audit
+└── scripts/
+    ├── __init__.py                       # Package initialization
+    ├── universe.py                       # Point-in-time asset filter & walk-forward window definitions
+    ├── utils.py                          # Simplex normalization, diversity tracking, and data loaders
+    ├── algorithms.py                     # Standard SOS and proposed AOBL-SOS optimization solvers
+    ├── metaheuristics.py                 # Baseline competitor solvers (GA, PSO, DE)
+    ├── evaluation.py                     # Objective function & Almgren-Chriss execution model
+    ├── ablation.py                       # 6-variant walk-forward ablation module
+    ├── pbo_cscv.py                       # CSCV PBO, DSR, PSR, and MinBTL statistical functions
+    ├── analysis.py                       # Carhart 4-factor attribution, AUM capacity, VIX regimes
+    ├── walk_forward.py                   # Expanding walk-forward orchestrator
+    └── run_all.py                        # Master single entry-point pipeline script
+```
+
+---
+
+## 4. Replication & Verification Instructions
+
+### Requirements
+- Python 3.9+
+- Dependencies: `numpy`, `pandas`, `scipy`, `scikit-learn`, `matplotlib`, `statsmodels`
 
 ```bash
-# 1. Install dependencies
 pip install numpy pandas scipy scikit-learn matplotlib statsmodels
+```
 
-# 2. Run the complete research suite
+### Quick Verification & Audit
+To verify that all numbers in `manuscript/paper.tex`, result CSVs, and statistical files match with **0 discrepancies**:
+
+```bash
+PYTHONPATH=. python3 scratch/verify_all.py
+```
+
+### Full Pipeline Execution
+To re-run the entire walk-forward optimization, ablation study, CSCV overfitting analysis, and factor attribution from scratch:
+
+```bash
 PYTHONPATH=. python3 -m scripts.run_all
 ```
 
-Outputs and plots are automatically written to `results/` and synced to `manuscript/`.
+All results and figures will automatically update in `results/` and sync to `manuscript/`.

@@ -1,9 +1,11 @@
 import os
 import random
+import warnings
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from scripts.universe import filter_point_in_time_universe
+
+warnings.filterwarnings('ignore', category=UserWarning)
 
 def set_seed(seed: int):
     random.seed(seed)
@@ -61,7 +63,8 @@ def population_diversity(pop: np.ndarray) -> float:
 def load_raw_data(filepath: str = "data/sp500_daily.csv"):
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"Data file not found at {filepath}")
-    df_all = pd.read_csv(filepath, index_col=[0, 1], parse_dates=True)
+    df_all = pd.read_csv(filepath, index_col=[0, 1])
+    df_all.index = df_all.index.set_levels([pd.to_datetime(df_all.index.levels[0]), df_all.index.levels[1]])
     df = df_all.unstack(level=1).sort_index()
     df_ret = df['Return']
     df_vol = df['Volume']
