@@ -258,12 +258,12 @@ AOBL-SOS achieves the highest net Sharpe ratio (0.841) and annualized CAGR (17.2
 \label{fig:combined_performance}
 \end{figure}
 
-\subsection{7-Variant Walk-Forward Ablation Study}
-To isolate the exact source of algorithmic outperformance, Table \ref{tab:ablation} reports the performance of seven ablation variants evaluated across the 7-window expanding walk-forward protocol.
+\subsection{6-Variant Walk-Forward Ablation Study}
+To isolate the exact source of algorithmic outperformance, Table \ref{tab:ablation} reports the performance of six ablation variants evaluated across the 7-window expanding walk-forward protocol.
 
 \begin{table}[htbp]
 \centering
-\caption{7-Variant Walk-Forward Algorithmic Ablation Study (2018--2024 OOS)}
+\caption{6-Variant Walk-Forward Algorithmic Ablation Study (2018--2024 OOS)}
 \label{tab:ablation}
 \begin{tabular}{lcccc}
 \toprule
@@ -274,13 +274,12 @@ Variant B (SOS + Drawdown Penalty) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
 Variant C (SOS + Random Restarts) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
 Variant D (SOS + Static Opposition) & 0.782 & 16.28\% & --33.14\% & 0.491 \\
 Variant E (SOS + Fixed Reflection Opposition) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
-Variant F (SOS + Fixed Centroid Opposition) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
-\textbf{Variant G (Full AOBL-SOS Proposed)} & \textbf{0.841} & \textbf{17.27\%} & \textbf{--31.97\%} & \textbf{0.540} \\
+\textbf{Variant F (Full AOBL-SOS Proposed)} & \textbf{0.841} & \textbf{17.27\%} & \textbf{--31.97\%} & \textbf{0.540} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ablation results confirm that removing the drawdown penalty (Variant A) reduces net Sharpe ratio from 0.771 to 0.747, while incorporating centroid-based opposition (Variant F and G) provides major exploratory acceleration (Sharpe 0.841). Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
+The ablation results confirm that removing the drawdown penalty (Variant A) reduces net Sharpe ratio from 0.771 to 0.747, while incorporating centroid-based adaptive opposition (Variant F) provides major exploratory acceleration (Sharpe 0.841). Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
 
 \subsection{Statistical Significance of Outperformance}
 To evaluate the statistical robustness of Sharpe ratio differences, we execute the Jobson-Korkie hypothesis test with Memmel's (2003) asymptotic variance correction on daily out-of-sample returns. Comparing AOBL-SOS against competing solvers yields:

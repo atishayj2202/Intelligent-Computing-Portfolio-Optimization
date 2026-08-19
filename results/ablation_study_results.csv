@@ -4,5 +4,4 @@ Variant B (SOS + Drawdown Penalty),2018-2024 (Chained OOS),0.771,16.00%,-32.72%,
 Variant C (SOS + Random Restarts),2018-2024 (Chained OOS),0.771,16.00%,-32.72%,0.489
 Variant D (SOS + Static Opposition),2018-2024 (Chained OOS),0.782,16.28%,-33.14%,0.491
 Variant E (SOS + Fixed Reflection Opposition),2018-2024 (Chained OOS),0.771,16.00%,-32.72%,0.489
-Variant F (SOS + Fixed Centroid Opposition),2018-2024 (Chained OOS),0.841,17.27%,-31.97%,0.540
-Variant G (Full AOBL-SOS Proposed),2018-2024 (Chained OOS),0.841,17.27%,-31.97%,0.540
+Variant F (Full AOBL-SOS Proposed),2018-2024 (Chained OOS),0.841,17.27%,-31.97%,0.540

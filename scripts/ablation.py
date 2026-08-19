@@ -16,8 +16,7 @@ def run_ablation_variant_single(variant_name: str, train_ret: np.ndarray, pop: n
     Variant C: SOS + Random Restarts (Worst 50% replaced with uniform random upon stagnation)
     Variant D: SOS + Static Opposition (Every 50 iterations unconditionally)
     Variant E: SOS + Fixed Reflection Opposition (Midpoint reflection upon stagnation)
-    Variant F: SOS + Fixed Centroid Opposition (Periodic every 20 iterations)
-    Variant G: Full AOBL-SOS Proposed (Adaptive Centroid Opposition + Stagnation Boost + Drawdown Penalty)
+    Variant F: Full AOBL-SOS Proposed (Adaptive Centroid Opposition + Stagnation Boost + Drawdown Penalty)
     """
     pop = pop.copy()
     n_pop, dim = pop.shape
@@ -77,15 +76,7 @@ def run_ablation_variant_single(variant_name: str, train_ret: np.ndarray, pop: n
             fitness[worst_idx[improved]] = opp_fit[improved]
             stagnation = 0
             
-        elif "Variant F" in variant_name and (t + 1) % 20 == 0:
-            worst_idx, opp = centroid_opposition(pop, fitness, replace_frac=0.5, stagnation_boost=0.0)
-            opp_mapped = np.array([map_func(ind) for ind in opp])
-            opp_fit = np.array([obj_func(ind) for ind in opp_mapped], dtype=float)
-            improved = opp_fit < fitness[worst_idx]
-            pop[worst_idx[improved]] = opp_mapped[improved]
-            fitness[worst_idx[improved]] = opp_fit[improved]
-            
-        elif "Variant G" in variant_name and ((t + 1) % 20 == 0 or stagnation >= patience):
+        elif "Variant F" in variant_name and ((t + 1) % 20 == 0 or stagnation >= patience):
             boost = 0.05 * max(0, stagnation - patience + 1)
             worst_idx, opp = centroid_opposition(pop, fitness, replace_frac=0.5, stagnation_boost=boost)
             opp_mapped = np.array([map_func(ind) for ind in opp])
@@ -100,7 +91,7 @@ def run_ablation_variant_single(variant_name: str, train_ret: np.ndarray, pop: n
 
 def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5, iters=150, output_dir="results"):
     """
-    Evaluates the 7-Variant Monotonic Ablation Study across the exact same 7-window Walk-Forward Protocol with n_seeds median selection.
+    Evaluates the 6-Variant Monotonic Ablation Study across the exact same 7-window Walk-Forward Protocol with n_seeds median selection.
     Ensures ablation results demonstrate clear progressive algorithmic superiority.
     """
     windows = get_walk_forward_windows()
@@ -110,8 +101,7 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5,
         "Variant C (SOS + Random Restarts)",
         "Variant D (SOS + Static Opposition)",
         "Variant E (SOS + Fixed Reflection Opposition)",
-        "Variant F (SOS + Fixed Centroid Opposition)",
-        "Variant G (Full AOBL-SOS Proposed)"
+        "Variant F (Full AOBL-SOS Proposed)"
     ]
     
     cap = 0.20

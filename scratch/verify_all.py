@@ -35,7 +35,7 @@ def audit_results_and_paper(results_dir="results", manuscript_dir="manuscript"):
             discrepancies.append(f"Master CSV MDD mismatch: got {mdd}, expected -31.97%")
 
     # ---------------------------------------------------------
-    # 2. Audit 7-Variant Ablation CSV vs paper.tex Table 2
+    # 2. Audit 6-Variant Ablation CSV vs paper.tex Table 2
     # ---------------------------------------------------------
     print("\n[2/6] Auditing Ablation Study CSV vs paper.tex Table 2...")
     ablation_csv_path = os.path.join(results_dir, "ablation_study_results.csv")
@@ -48,12 +48,12 @@ def audit_results_and_paper(results_dir="results", manuscript_dir="manuscript"):
             print(f"    {row['Ablation Variant']}: Sharpe = {row['Net Sharpe']}")
             
         v_a = float(abl_df.loc[abl_df['Ablation Variant'].str.contains('Variant A'), 'Net Sharpe'].values[0])
-        v_g = float(abl_df.loc[abl_df['Ablation Variant'].str.contains('Variant G'), 'Net Sharpe'].values[0])
+        v_f = float(abl_df.loc[abl_df['Ablation Variant'].str.contains('Variant F'), 'Net Sharpe'].values[0])
         
-        if v_a >= v_g:
-            discrepancies.append(f"Ablation non-monotonic: Variant A ({v_a}) >= Variant G ({v_g})")
-        if v_g != 0.841:
-            discrepancies.append(f"Variant G Sharpe mismatch: got {v_g}, expected 0.841")
+        if v_a >= v_f:
+            discrepancies.append(f"Ablation non-monotonic: Variant A ({v_a}) >= Variant F ({v_f})")
+        if v_f != 0.841:
+            discrepancies.append(f"Variant F Sharpe mismatch: got {v_f}, expected 0.841")
 
     # ---------------------------------------------------------
     # 3. Audit CSCV / PBO / DSR Text File vs paper.tex Table 4
