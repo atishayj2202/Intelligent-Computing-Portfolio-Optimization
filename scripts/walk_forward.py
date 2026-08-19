@@ -4,11 +4,29 @@ import pandas as pd
 from scipy.optimize import minimize
 from sklearn.covariance import LedoitWolf
 
+import scipy.stats as stats
 from scripts.universe import get_walk_forward_windows
 from scripts.utils import set_seed, normalize_cap_cardinality, load_data_for_window, population_diversity
 from scripts.algorithms import AOBL_SOS, SOS
 from scripts.metaheuristics import run_ga, run_pso, run_de
 from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss
+
+def jobson_korkie_memmel(ret1, ret2):
+    """
+    Jobson-Korkie test with Memmel's correction for Sharpe ratio difference significance.
+    """
+    mu1, mu2 = np.mean(ret1), np.mean(ret2)
+    var1, var2 = np.var(ret1, ddof=1), np.var(ret2, ddof=1)
+    covar = np.cov(ret1, ret2)[0, 1]
+    
+    sh1 = mu1 / np.sqrt(var1 + 1e-12)
+    sh2 = mu2 / np.sqrt(var2 + 1e-12)
+    
+    T = len(ret1)
+    theta = (1.0 / (2.0 * T)) * (2.0 * var1**2 * var2**2 - 2.0 * var1 * var2 * covar + 0.5 * mu1**2 * var2**2 + 0.5 * mu2**2 * var1**2 - (mu1 * mu2 / (var1 * var2 + 1e-12)) * covar**2)
+    z = (sh1 - sh2) / np.sqrt(abs(theta) + 1e-12)
+    pval = 2.0 * (1.0 - stats.norm.cdf(abs(z)))
+    return sh1, sh2, z, pval
 
 def min_variance_portfolio(cov, cap=0.20, K=30):
     n = cov.shape[0]

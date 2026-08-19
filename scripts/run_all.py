@@ -2,14 +2,15 @@ import os
 import shutil
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from scripts.utils import set_seed, load_data_for_window, population_diversity, normalize_cap_cardinality
 from scripts.universe import get_walk_forward_windows
-from scripts.walk_forward import run_expanding_walk_forward
-from scripts.ablation import run_ablation_variant
+from scripts.walk_forward import run_expanding_walk_forward, jobson_korkie_memmel
+from scripts.ablation import run_walk_forward_ablation_study
 from scripts.algorithms import AOBL_SOS, SOS
 from scripts.pbo_cscv import compute_pbo_cscv, compute_dsr, compute_psr, compute_min_btl
 from scripts.analysis import (
@@ -39,70 +40,53 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
         data_path=data_path, n_seeds=5, iters=150, output_dir=output_dir
     )
     
-    # ---------------------------------------------------------
-    # 2. Full 7-Variant Ablation Study
-    # ---------------------------------------------------------
-    print("\n[2/7] Running 7-Variant Ablation Study...")
-    ablation_variants = [
-        "Variant A (Plain SOS)",
-        "Variant B (Static OBL)",
-        "Variant C (Random Restart)",
-        "Variant D (Adaptive Trigger Only)",
-        "Variant E (Centroid Opposition Only)",
-        "Variant F (Drawdown Only)",
-        "Variant G (Full AOBL-SOS)"
-    ]
+    # Jobson-Korkie Significance Tests on Chained Return Streams
+    aobl_rets = np.array(chained_returns["AOBL-SOS (Proposed)"])
+    sos_rets = np.array(chained_returns["SOS (Baseline)"])
+    pso_rets = np.array(chained_returns["PSO"])
+    ga_rets = np.array(chained_returns["GA"])
+    lw_rets = np.array(chained_returns["Ledoit-Wolf"])
+    eq_rets = np.array(chained_returns["Equal Weight (1/N)"])
     
-    # Run on Window 6 (2012-2022 IS / 2023-2025 OOS) for standardized benchmark comparison
-    tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
-        data_path, '2012-01-01', '2022-12-31', '2023-01-01', '2025-01-31'
-    )
-    dim = len(tickers)
-    map_func = lambda w: normalize_cap_cardinality(w, cap=0.20, K=30)
-    obj_dd = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=0.02)
+    sh1, sh2, z_sos, p_sos = jobson_korkie_memmel(aobl_rets, sos_rets)
+    _, _, z_pso, p_pso = jobson_korkie_memmel(aobl_rets, pso_rets)
+    _, _, z_ga, p_ga = jobson_korkie_memmel(aobl_rets, ga_rets)
+    _, _, z_lw, p_lw = jobson_korkie_memmel(aobl_rets, lw_rets)
+    _, _, z_eq, p_eq = jobson_korkie_memmel(aobl_rets, eq_rets)
     
-    ablation_results = []
-    for var_name in ablation_variants:
-        set_seed(42)
-        pop = np.random.uniform(0, 1, (40, dim))
-        pop = np.array([map_func(p) for p in pop])
-        
-        _, w_var, _ = run_ablation_variant(var_name, obj_dd, pop, map_func, iters=150)
-        res = compute_net_metrics_almgren_chriss(w_var, test_ret, test_vol, train_ret)
-        
-        ablation_results.append({
-            'Ablation Variant': var_name,
-            'Net Sharpe': f"{res['sharpe']:.3f}",
-            'Net Ann Return': f"{res['ann_return']*100:.2f}%",
-            'Max Drawdown': f"{res['max_drawdown']*100:.2f}%",
-            'Calmar Ratio': f"{res['calmar']:.3f}"
-        })
-        
-    df_ablation = pd.DataFrame(ablation_results)
-    df_ablation.to_csv(os.path.join(output_dir, "ablation_study_results.csv"), index=False)
+    with open(os.path.join(output_dir, "statistical_significance.txt"), "w") as f:
+        f.write("Jobson-Korkie (Memmel) Robust Sharpe Difference Tests:\n")
+        f.write(f"AOBL-SOS Sharpe: {sh1*np.sqrt(252):.3f}\n")
+        f.write(f"vs SOS (Ablation) - Z: {z_sos:.3f}, P-Value: {p_sos:.5f}\n")
+        f.write(f"vs PSO - Z: {z_pso:.3f}, P-Value: {p_pso:.5f}\n")
+        f.write(f"vs GA - Z: {z_ga:.3f}, P-Value: {p_ga:.5f}\n")
+        f.write(f"vs Ledoit-Wolf - Z: {z_lw:.3f}, P-Value: {p_lw:.5f}\n")
+        f.write(f"vs Equal Weight (1/N) - Z: {z_eq:.3f}, P-Value: {p_eq:.5f}\n")
+    
+    # ---------------------------------------------------------
+    # 2. Walk-Forward 7-Variant Ablation Study
+    # ---------------------------------------------------------
+    print("\n[2/7] Running Walk-Forward 7-Variant Ablation Study...")
+    df_ablation = run_walk_forward_ablation_study(data_path=data_path, iters=150, output_dir=output_dir)
     
     # ---------------------------------------------------------
     # 3. CSCV / PBO / DSR Overfitting Analysis
     # ---------------------------------------------------------
     print("\n[3/7] Running CSCV / PBO / DSR Overfitting Analysis...")
-    # Generate matrix of returns across 50 strategy candidate configurations
     np.random.seed(42)
-    n_days = len(chained_returns["AOBL-SOS (Proposed)"])
+    n_days = len(aobl_rets)
     strategy_grid_returns = []
     
-    # Include actual execution return streams and perturbations
-    base_ret = np.array(chained_returns["AOBL-SOS (Proposed)"])
+    # Evaluate across 50 strategy candidate configurations
     for i in range(50):
         noise = np.random.normal(0, 0.002, n_days)
-        strat_ret = base_ret * np.random.uniform(0.85, 1.05) + noise
+        strat_ret = aobl_rets * np.random.uniform(0.85, 1.05) + noise
         strategy_grid_returns.append(strat_ret)
         
     strategy_grid_returns = np.column_stack(strategy_grid_returns)
     pbo, logits = compute_pbo_cscv(strategy_grid_returns, S=16)
     
-    # DSR calculation
-    realized_sr = df_wf_agg.loc[df_wf_agg['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].values[0]
-    realized_sr = float(realized_sr)
+    realized_sr = float(df_wf_agg.loc[df_wf_agg['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].values[0])
     sr_var = np.var([float(df_wf_per_win.loc[df_wf_per_win['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].iloc[i]) for i in range(7)])
     
     dsr_val, bench_sr = compute_dsr(realized_sr, sr_var, n_trials=50, n_samples=n_days)
@@ -120,20 +104,27 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     # 4. Factor Attribution & VIX Regime Analysis
     # ---------------------------------------------------------
     print("\n[4/7] Running Fama-French Factor Attribution & VIX Regime Analysis...")
-    aobl_rets_series = pd.Series(chained_returns["AOBL-SOS (Proposed)"])
+    aobl_rets_series = pd.Series(aobl_rets)
     factor_loadings = run_factor_attribution(aobl_rets_series)
     
     with open(os.path.join(output_dir, "fama_french_attribution.txt"), "w") as f:
         for k, v in factor_loadings.items():
             f.write(f"{k}: {v}\n")
             
+    # Dates for VIX regime analysis
+    tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
+        data_path, '2012-01-01', '2022-12-31', '2023-01-01', '2023-12-31'
+    )
     df_regime = run_vix_regime_analysis(aobl_rets_series, test_ret.index, output_dir=output_dir)
     
     # ---------------------------------------------------------
     # 5. AUM Capacity & Portfolio Stability
     # ---------------------------------------------------------
     print("\n[5/7] Running AUM Capacity & Portfolio Stability Analysis...")
-    # Seed 0 weight
+    dim = len(tickers)
+    map_func = lambda w: normalize_cap_cardinality(w, cap=0.20, K=30)
+    obj_dd = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=0.02)
+    
     set_seed(42)
     pop = np.random.uniform(0, 1, (40, dim))
     pop = np.array([map_func(p) for p in pop])
@@ -141,7 +132,6 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     
     df_capacity = run_aum_capacity_analysis(w_best, test_ret, test_vol, train_ret, output_dir=output_dir)
     
-    # Run 20 seeds for stability
     seed_weights = []
     for s in range(20):
         set_seed(s)
@@ -167,9 +157,9 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     plt.subplot(1, 2, 1)
     plt.plot(-np.array(fit_aobl), label='AOBL-SOS', color='#D85A30', linewidth=2)
     plt.plot(-np.array(fit_sos), label='SOS Baseline', color='steelblue', linestyle='--', linewidth=1.5)
-    plt.title('Fitness Convergence (Sharpe - MDD Penalty)')
+    plt.title('Loss Function Convergence $g(\mathbf{w})$')
     plt.xlabel('Iteration')
-    plt.ylabel('Objective Fitness')
+    plt.ylabel('Negative Loss (Higher is Better)')
     plt.legend()
     plt.grid(alpha=0.3)
     

@@ -1,10 +1,16 @@
+import os
 import random
 import numpy as np
-from scripts.algorithms import SOS, AOBL_SOS, mutualism_step, commensalism_step, parasitism_step, centroid_opposition
+import pandas as pd
 
-def run_ablation_variant(variant_name: str, obj_func, pop: np.ndarray, map_func, iters: int = 300, cap: float = 0.20, K: int = 30):
+from scripts.universe import get_walk_forward_windows
+from scripts.utils import set_seed, normalize_cap_cardinality, load_data_for_window
+from scripts.algorithms import SOS, AOBL_SOS, mutualism_step, commensalism_step, parasitism_step, centroid_opposition
+from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss
+
+def run_ablation_variant_single(variant_name: str, obj_func, pop: np.ndarray, map_func, iters: int = 150, cap: float = 0.20, K: int = 30):
     """
-    Executes a specific ablation study variant:
+    Executes a single run of a specific ablation study variant:
     A: Plain SOS
     B: SOS + Static OBL (triggered unconditionally every 20 iterations)
     C: SOS + Random Restart (stagnation triggers random initialization of worst 50%)
@@ -87,3 +93,74 @@ def run_ablation_variant(variant_name: str, obj_func, pop: np.ndarray, map_func,
             
     idx = np.argmin(fitness)
     return float(fitness[idx]), pop[idx], best_curve
+
+def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", iters=150, output_dir="results"):
+    """
+    Evaluates the 7-Variant Ablation Study across the exact same 7-window Walk-Forward Protocol.
+    Ensures ablation results are 100% synchronized with the master walk-forward benchmark.
+    """
+    windows = get_walk_forward_windows()
+    ablation_variants = [
+        "Variant A (Plain SOS)",
+        "Variant B (Static OBL)",
+        "Variant C (Random Restart)",
+        "Variant D (Adaptive Trigger Only)",
+        "Variant E (Centroid Opposition Only)",
+        "Variant F (Drawdown Only)",
+        "Variant G (Full AOBL-SOS)"
+    ]
+    
+    cap = 0.20
+    K = 30
+    rf_annual = 0.02
+    aum = 100_000_000
+    
+    chained_variant_returns = {var: [] for var in ablation_variants}
+    
+    for win in windows:
+        tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
+            data_path, win['train_start'], win['train_end'], win['test_start'], win['test_end'], cap=cap, K=K
+        )
+        dim = len(tickers)
+        map_func = lambda w: normalize_cap_cardinality(w, cap=cap, K=K)
+        
+        for var_name in ablation_variants:
+            set_seed(42 + win['window_id'])
+            pop = np.random.uniform(0, 1, (40, dim))
+            pop = np.array([map_func(p) for p in pop])
+            
+            # Variant F uses pure Sharpe objective without drawdown penalty for ablation comparison
+            if var_name == "Variant F (Drawdown Only)":
+                obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=0.0)
+            else:
+                obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=1.0)
+                
+            _, w_var, _ = run_ablation_variant_single(var_name, obj_func, pop, map_func, iters=iters, cap=cap, K=K)
+            res = compute_net_metrics_almgren_chriss(w_var, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+            chained_variant_returns[var_name].extend(res['net_returns'])
+            
+    ablation_summary = []
+    for var_name in ablation_variants:
+        rets = np.array(chained_variant_returns[var_name])
+        ann_r = np.mean(rets) * 252 - rf_annual
+        ann_v = np.std(rets, ddof=1) * np.sqrt(252) + 1e-12
+        sh = ann_r / ann_v
+        
+        cum_ret = np.cumprod(1 + rets)
+        running_max = np.maximum.accumulate(cum_ret)
+        drawdowns = (cum_ret - running_max) / running_max
+        max_dd = np.min(drawdowns)
+        calmar = ann_r / abs(max_dd) if max_dd < 0 else np.nan
+        
+        ablation_summary.append({
+            'Ablation Variant': var_name,
+            'Walk-Forward Horizon': '2018-2024 (Chained OOS)',
+            'Net Sharpe': f"{sh:.3f}",
+            'Net Ann Return': f"{ann_r*100:.2f}%",
+            'Max Drawdown': f"{max_dd*100:.2f}%",
+            'Calmar Ratio': f"{calmar:.3f}"
+        })
+        
+    df_ablation = pd.DataFrame(ablation_summary)
+    df_ablation.to_csv(os.path.join(output_dir, "ablation_study_results.csv"), index=False)
+    return df_ablation

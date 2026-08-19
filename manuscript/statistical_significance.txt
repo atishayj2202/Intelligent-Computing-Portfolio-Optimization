@@ -1,5 +1,7 @@
-Jobson-Korkie (Memmel) Test:
-AOBL-SOS Sharpe: 2.039
-vs 1/N - Z-Statistic: 3802492.773, P-Value: 0.00000
-vs Ledoit-Wolf - Z-Statistic: 1356394.684, P-Value: 0.00000
-vs SOS (Ablation) - Z-Statistic: 967180.510, P-Value: 0.00000
+Jobson-Korkie (Memmel) Robust Sharpe Difference Tests:
+AOBL-SOS Sharpe: 0.906
+vs SOS (Ablation) - Z: 316.734, P-Value: 0.00000
+vs PSO - Z: 189.799, P-Value: 0.00000
+vs GA - Z: 259.904, P-Value: 0.00000
+vs Ledoit-Wolf - Z: 417.041, P-Value: 0.00000
+vs Equal Weight (1/N) - Z: 2042.859, P-Value: 0.00000

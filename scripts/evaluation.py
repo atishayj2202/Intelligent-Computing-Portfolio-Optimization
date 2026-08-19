@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 
 def obj_sharpe_drawdown(w, train_ret, rf_annual=0.0, lambda_dd=1.0):
+    """
+    Minimization Loss Function:
+    g(w) = -SR(w) + lambda * |MDD(w)|
+    Minimizing g(w) maximizes risk-adjusted return SR(w) penalized by maximum drawdown |MDD(w)|.
+    """
     port_ret = np.dot(train_ret, w)
     
     ann_ret = np.mean(port_ret) * 252 - rf_annual
@@ -10,11 +15,12 @@ def obj_sharpe_drawdown(w, train_ret, rf_annual=0.0, lambda_dd=1.0):
     
     cum_ret = np.cumprod(1 + port_ret)
     running_max = np.maximum.accumulate(cum_ret)
-    drawdowns = cum_ret / running_max - 1.0
+    drawdowns = (cum_ret - running_max) / running_max
     max_dd = np.min(drawdowns)
     
     penalty = lambda_dd * abs(max_dd)
-    return -(sharpe - penalty)
+    # Loss g(w) to MINIMIZE:
+    return -sharpe + penalty
 
 def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf_annual=0.0):
     returns = test_ret_df.values
@@ -34,7 +40,6 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
     
     for t in range(n_days):
         day_ret = returns[t]
-        # End of day prices theoretically
         shares = shares * (1 + day_ret)
         port_val = np.sum(shares)
         
@@ -61,11 +66,10 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
     
     cum_ret = np.cumprod(1 + net_returns)
     running_max = np.maximum.accumulate(cum_ret)
-    drawdowns = cum_ret / running_max - 1.0
+    drawdowns = (cum_ret - running_max) / running_max
     max_dd = np.min(drawdowns)
     
     calmar = ann_ret / abs(max_dd) if max_dd < 0 else np.nan
-    
     cvar_95 = np.percentile(net_returns, 5)
     
     return {
@@ -80,16 +84,16 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
         'net_returns': net_returns
     }
 
-def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.0, Y=0.1):
+def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.02, Y=0.10):
     returns = test_ret_df.values
     adv_dollars = test_vol_df.values
     
-    # Fallback to mean ADV if a day has 0 volume or missing
+    # Fallback to mean ADV if volume is missing
     col_means = np.nanmean(adv_dollars, axis=0)
     inds = np.where(np.isnan(adv_dollars) | (adv_dollars == 0))
     adv_dollars[inds] = np.take(col_means, inds[1])
     
-    # Sigma is historical daily volatility
+    # Historical daily volatility
     sigma = np.std(train_ret_df.values, axis=0, ddof=1)
     
     n_days, n_assets = returns.shape
@@ -108,7 +112,7 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
     slippage_dollar = np.sum(slippage_frac * trades_dollar)
     
     port_val -= slippage_dollar
-    shares_val = port_val * current_w # Re-adjust after cost
+    shares_val = port_val * current_w
     
     for t in range(n_days):
         day_ret = returns[t]
@@ -141,7 +145,7 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
     
     cum_ret = np.cumprod(1 + net_returns)
     running_max = np.maximum.accumulate(cum_ret)
-    drawdowns = cum_ret / running_max - 1.0
+    drawdowns = (cum_ret - running_max) / running_max
     max_dd = np.min(drawdowns)
     calmar = ann_ret / abs(max_dd) if max_dd < 0 else np.nan
     cvar_95 = np.percentile(net_returns, 5)
