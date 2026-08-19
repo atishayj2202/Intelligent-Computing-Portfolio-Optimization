@@ -16,7 +16,7 @@ def run_ablation_variant_single(variant_name: str, obj_func, pop: np.ndarray, ma
     C: SOS + Random Restart (stagnation triggers random initialization of worst 50%)
     D: SOS + Adaptive Trigger Only (adaptive trigger replaces worst 50% with random uniform)
     E: SOS + Centroid Opposition Only (centroid opposition every 20 iterations unconditionally)
-    F: SOS + Drawdown Penalty Only (standard SOS on drawdown objective)
+    F: SOS + No Drawdown Penalty (lambda_dd = 0.0)
     G: Full AOBL-SOS
     """
     pop = pop.copy()
@@ -24,7 +24,7 @@ def run_ablation_variant_single(variant_name: str, obj_func, pop: np.ndarray, ma
     fitness = np.array([obj_func(ind) for ind in pop], dtype=float)
     best_curve = []
     
-    if variant_name == "Variant A (Plain SOS)" or variant_name == "Variant F (Drawdown Only)":
+    if variant_name == "Variant A (Plain SOS)" or variant_name == "Variant F (No Drawdown Penalty)":
         return SOS(obj_func, pop, map_func, iters=iters, is_portfolio=True)
         
     elif variant_name == "Variant G (Full AOBL-SOS)":
@@ -94,9 +94,9 @@ def run_ablation_variant_single(variant_name: str, obj_func, pop: np.ndarray, ma
     idx = np.argmin(fitness)
     return float(fitness[idx]), pop[idx], best_curve
 
-def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", iters=150, output_dir="results"):
+def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5, iters=150, output_dir="results"):
     """
-    Evaluates the 7-Variant Ablation Study across the exact same 7-window Walk-Forward Protocol.
+    Evaluates the 7-Variant Ablation Study across the exact same 7-window Walk-Forward Protocol with n_seeds median selection.
     Ensures ablation results are 100% synchronized with the master walk-forward benchmark.
     """
     windows = get_walk_forward_windows()
@@ -106,7 +106,7 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", iters=150,
         "Variant C (Random Restart)",
         "Variant D (Adaptive Trigger Only)",
         "Variant E (Centroid Opposition Only)",
-        "Variant F (Drawdown Only)",
+        "Variant F (No Drawdown Penalty)",
         "Variant G (Full AOBL-SOS)"
     ]
     
@@ -125,19 +125,27 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", iters=150,
         map_func = lambda w: normalize_cap_cardinality(w, cap=cap, K=K)
         
         for var_name in ablation_variants:
-            set_seed(42 + win['window_id'])
-            pop = np.random.uniform(0, 1, (40, dim))
-            pop = np.array([map_func(p) for p in pop])
+            metrics_list = []
             
-            # Variant F uses pure Sharpe objective without drawdown penalty for ablation comparison
-            if var_name == "Variant F (Drawdown Only)":
-                obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=0.0)
-            else:
-                obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=1.0)
+            for seed in range(n_seeds):
+                set_seed(seed * 100 + win['window_id'])
+                pop = np.random.uniform(0, 1, (40, dim))
+                pop = np.array([map_func(p) for p in pop])
                 
-            _, w_var, _ = run_ablation_variant_single(var_name, obj_func, pop, map_func, iters=iters, cap=cap, K=K)
-            res = compute_net_metrics_almgren_chriss(w_var, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
-            chained_variant_returns[var_name].extend(res['net_returns'])
+                # Variant F uses pure Sharpe objective without drawdown penalty for ablation comparison
+                if var_name == "Variant F (No Drawdown Penalty)":
+                    obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=0.0)
+                else:
+                    obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=rf_annual, lambda_dd=1.0)
+                    
+                _, w_var, _ = run_ablation_variant_single(var_name, obj_func, pop, map_func, iters=iters, cap=cap, K=K)
+                res = compute_net_metrics_almgren_chriss(w_var, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+                metrics_list.append(res)
+                
+            # Median seed selection matching run_expanding_walk_forward
+            median_idx = int(np.argsort([m['sharpe'] for m in metrics_list])[len(metrics_list)//2])
+            best_res = metrics_list[median_idx]
+            chained_variant_returns[var_name].extend(best_res['net_returns'])
             
     ablation_summary = []
     for var_name in ablation_variants:

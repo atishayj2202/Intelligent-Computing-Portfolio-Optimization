@@ -67,55 +67,76 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     # 2. Walk-Forward 7-Variant Ablation Study
     # ---------------------------------------------------------
     print("\n[2/7] Running Walk-Forward 7-Variant Ablation Study...")
-    df_ablation = run_walk_forward_ablation_study(data_path=data_path, iters=150, output_dir=output_dir)
+    df_ablation = run_walk_forward_ablation_study(data_path=data_path, n_seeds=5, iters=150, output_dir=output_dir)
     
     # ---------------------------------------------------------
     # 3. CSCV / PBO / DSR Overfitting Analysis
     # ---------------------------------------------------------
-    print("\n[3/7] Running CSCV / PBO / DSR Overfitting Analysis...")
-    np.random.seed(42)
-    n_days = len(aobl_rets)
-    strategy_grid_returns = []
+    print("\n[3/7] Running CSCV / PBO / DSR Overfitting Analysis on Real Strategy Grid...")
+    windows = get_walk_forward_windows()
+    grid_returns_list = []
     
-    # Evaluate across 50 strategy candidate configurations
-    for i in range(50):
-        noise = np.random.normal(0, 0.002, n_days)
-        strat_ret = aobl_rets * np.random.uniform(0.85, 1.05) + noise
-        strategy_grid_returns.append(strat_ret)
-        
-    strategy_grid_returns = np.column_stack(strategy_grid_returns)
+    # Hyperparameter grid: 5 lambdas x 5 Ks = 25 candidate configurations
+    lambda_grid = [0.0, 0.5, 1.0, 1.5, 2.0]
+    k_grid = [15, 20, 25, 30, 35]
+    
+    for l_val in lambda_grid:
+        for k_val in k_grid:
+            cand_chained = []
+            for win in windows:
+                tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
+                    data_path, win['train_start'], win['train_end'], win['test_start'], win['test_end'], cap=0.20, K=k_val
+                )
+                dim = len(tickers)
+                map_func = lambda w: normalize_cap_cardinality(w, cap=0.20, K=k_val)
+                obj_func = lambda w: obj_sharpe_drawdown(w, train_ret.values, rf_annual=0.02, lambda_dd=l_val)
+                
+                set_seed(42 + win['window_id'])
+                pop = np.random.uniform(0, 1, (40, dim))
+                pop = np.array([map_func(p) for p in pop])
+                
+                _, w_cand, _ = AOBL_SOS(obj_func, pop, map_func, iters=100, is_portfolio=True, cap=0.20, K=k_val)
+                res = compute_net_metrics_almgren_chriss(w_cand, test_ret, test_vol, train_ret, aum=100_000_000)
+                cand_chained.extend(res['net_returns'])
+            grid_returns_list.append(cand_chained)
+            
+    strategy_grid_returns = np.column_stack(grid_returns_list)
     pbo, logits = compute_pbo_cscv(strategy_grid_returns, S=16)
     
+    aobl_series = pd.Series(aobl_rets)
+    n_days = len(aobl_rets)
     realized_sr = float(df_wf_agg.loc[df_wf_agg['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].values[0])
-    sr_var = np.var([float(df_wf_per_win.loc[df_wf_per_win['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].iloc[i]) for i in range(7)])
+    sr_var = float(np.var([float(df_wf_per_win.loc[df_wf_per_win['Algorithm'] == "AOBL-SOS (Proposed)", 'Net Sharpe'].iloc[i]) for i in range(7)]))
     
-    dsr_val, bench_sr = compute_dsr(realized_sr, sr_var, n_trials=50, n_samples=n_days)
-    psr_val = compute_psr(realized_sr, 0.0, n_samples=n_days)
-    min_btl = compute_min_btl(realized_sr, bench_sr)
+    skew = float(stats.skew(aobl_rets))
+    kurt = float(stats.kurtosis(aobl_rets, fisher=False))
+    
+    dsr_val, bench_sr = compute_dsr(realized_sr, sr_var, n_trials=25, n_samples=n_days, skewness=skew, kurtosis=kurt)
+    psr_val = compute_psr(realized_sr, 0.0, n_samples=n_days, skewness=skew, kurtosis=kurt)
+    min_btl = compute_min_btl(realized_sr, bench_sr, skewness=skew, kurtosis=kurt)
     
     with open(os.path.join(output_dir, "pbo_dsr_results.txt"), "w") as f:
         f.write(f"Probability of Backtest Overfitting (PBO): {pbo:.4f}\n")
         f.write(f"Deflated Sharpe Ratio (DSR): {dsr_val:.4f}\n")
         f.write(f"Probabilistic Sharpe Ratio (PSR): {psr_val:.4f}\n")
         f.write(f"Implied Hurdle Sharpe (SR0): {bench_sr:.4f}\n")
-        f.write(f"Minimum Backtest Length (MinBTL): {min_btl:.2f} years\n")
+        f.write(f"Minimum Backtest Length (MinBTL): {min_btl:.2f} years\n" if not np.isnan(min_btl) else f"Minimum Backtest Length (MinBTL): N/A\n")
         
     # ---------------------------------------------------------
     # 4. Factor Attribution & VIX Regime Analysis
     # ---------------------------------------------------------
-    print("\n[4/7] Running Fama-French Factor Attribution & VIX Regime Analysis...")
-    aobl_rets_series = pd.Series(aobl_rets)
-    factor_loadings = run_factor_attribution(aobl_rets_series)
+    print("\n[4/7] Running Real Fama-French Factor Attribution & Real Volatility Regime Analysis...")
+    tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
+        data_path, '2012-01-01', '2017-12-31', '2018-01-01', '2024-12-31'
+    )
+    aobl_dates_series = pd.Series(aobl_rets, index=test_ret.index[:len(aobl_rets)])
+    factor_loadings = run_factor_attribution(aobl_dates_series, data_path=data_path)
     
     with open(os.path.join(output_dir, "fama_french_attribution.txt"), "w") as f:
         for k, v in factor_loadings.items():
             f.write(f"{k}: {v}\n")
             
-    # Dates for VIX regime analysis
-    tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
-        data_path, '2012-01-01', '2022-12-31', '2023-01-01', '2023-12-31'
-    )
-    df_regime = run_vix_regime_analysis(aobl_rets_series, test_ret.index, output_dir=output_dir)
+    df_regime = run_vix_regime_analysis(aobl_dates_series, data_path=data_path, output_dir=output_dir)
     
     # ---------------------------------------------------------
     # 5. AUM Capacity & Portfolio Stability
@@ -137,7 +158,7 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
         set_seed(s)
         p = np.random.uniform(0, 1, (40, dim))
         p = np.array([map_func(ind) for ind in p])
-        _, w_s, _ = AOBL_SOS(obj_dd, p, map_func, iters=100, is_portfolio=True)
+        _, w_s, _ = AOBL_SOS(obj_dd, p, map_func, iters=150, is_portfolio=True)
         seed_weights.append(w_s)
         
     stability_metrics = run_portfolio_stability(seed_weights, tickers, output_dir=output_dir)

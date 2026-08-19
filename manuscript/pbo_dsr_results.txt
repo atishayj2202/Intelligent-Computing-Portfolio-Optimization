@@ -1,5 +1,5 @@
-Probability of Backtest Overfitting (PBO): 0.4644
+Probability of Backtest Overfitting (PBO): 0.5110
 Deflated Sharpe Ratio (DSR): 0.0000
 Probabilistic Sharpe Ratio (PSR): 1.0000
-Implied Hurdle Sharpe (SR0): 2.6510
-Minimum Backtest Length (MinBTL): nan years
+Implied Hurdle Sharpe (SR0): 2.3259
+Minimum Backtest Length (MinBTL): N/A

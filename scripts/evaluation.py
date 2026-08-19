@@ -48,9 +48,9 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
             trades = np.abs(target_holdings - shares)
             cost = np.sum(trades) * (cost_bps / 10000.0)
             port_val -= cost
-            shares = target_holdings - (trades * (cost_bps / 10000.0))
+            shares = port_val * w
             
-            turnovers.append(np.sum(trades) / port_val)
+            turnovers.append(np.sum(trades) / (port_val + cost))
             
         val_history.append(port_val)
         
@@ -129,7 +129,7 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
             
             cost = np.sum(slippage_f * trades)
             port_val -= cost
-            shares_val = target_val - (slippage_f * trades)
+            shares_val = port_val * w
             
         val_history.append(port_val)
         

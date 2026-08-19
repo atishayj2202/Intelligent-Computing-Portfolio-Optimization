@@ -7,50 +7,70 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from scripts.evaluation import compute_net_metrics_almgren_chriss
+from scripts.utils import load_raw_data
 
-def run_factor_attribution(portfolio_returns: pd.Series, rf_series: pd.Series = None):
+def run_factor_attribution(portfolio_returns: pd.Series, data_path: str = "data/sp500_daily.csv", rf_annual: float = 0.02):
     """
-    Fama-French 5-Factor + Momentum Factor Attribution Regression.
-    R_p - R_f = alpha + beta_mkt*MKT + beta_smb*SMB + beta_hml*HML + beta_rmw*RMW + beta_cma*CMA + beta_mom*MOM
+    Fama-French / Carhart Multi-Factor Linear Regression on Real Market Asset Returns.
+    R_p - R_f = alpha + beta_mkt * MKT + beta_smb * SMB + beta_hml * HML + beta_mom * MOM
+    Factors are constructed directly from cross-sectional market constituents.
     """
-    n_days = len(portfolio_returns)
-    dates = portfolio_returns.index
+    rf_daily = rf_annual / 252.0
     
-    # Synthetic factor proxy derived from return cross-section if FF data is not pre-loaded
-    # MKT: Mean return of cross-section
-    # SMB: Top 50% vs Bottom 50% size proxy
-    # HML: Value vs Growth proxy
-    # MOM: Past 252-day winner vs loser proxy
-    np.random.seed(42)
-    mkt = portfolio_returns.values * 0.6 + np.random.normal(0, 0.005, n_days)
-    smb = np.random.normal(0.0001, 0.003, n_days)
-    hml = np.random.normal(-0.0001, 0.004, n_days)
-    rmw = np.random.normal(0.0002, 0.003, n_days)
-    cma = np.random.normal(0.0001, 0.002, n_days)
-    mom = np.random.normal(0.0003, 0.005, n_days)
+    # Load raw daily return matrix
+    df_ret, df_vol = load_raw_data(data_path)
+    df_ret_aligned = df_ret.reindex(portfolio_returns.index).fillna(0.0)
     
-    y = portfolio_returns.values
-    X = np.column_stack([mkt, smb, hml, rmw, cma, mom])
+    # 1. MKT: Equal-weighted market return
+    mkt = df_ret_aligned.mean(axis=1) - rf_daily
+    
+    # 2. SMB: Small cap (bottom 50% volume) vs Large cap (top 50% volume)
+    mean_vol = df_vol.mean(axis=0)
+    median_vol = mean_vol.median()
+    small_cols = mean_vol[mean_vol < median_vol].index
+    large_cols = mean_vol[mean_vol >= median_vol].index
+    
+    ret_small = df_ret_aligned[df_ret_aligned.columns.intersection(small_cols)].mean(axis=1)
+    ret_large = df_ret_aligned[df_ret_aligned.columns.intersection(large_cols)].mean(axis=1)
+    smb = ret_small - ret_large
+    
+    # 3. HML: High vs Low past volatility / value proxy
+    ann_vol = df_ret_aligned.std(axis=0) * np.sqrt(252)
+    vol_median = ann_vol.median()
+    high_vol_cols = ann_vol[ann_vol >= vol_median].index
+    low_vol_cols = ann_vol[ann_vol < vol_median].index
+    
+    hml = df_ret_aligned[df_ret_aligned.columns.intersection(low_vol_cols)].mean(axis=1) - \
+          df_ret_aligned[df_ret_aligned.columns.intersection(high_vol_cols)].mean(axis=1)
+          
+    # 4. MOM: 12-month momentum (past 252-day winner minus loser)
+    cum_12m = (1 + df_ret_aligned).prod(axis=0) - 1.0
+    mom_winners_mask = (cum_12m >= cum_12m.median())
+    winner_cols = cum_12m.index[mom_winners_mask]
+    loser_cols = cum_12m.index[~mom_winners_mask]
+    
+    mom_winners = df_ret_aligned[winner_cols].mean(axis=1)
+    mom_losers = df_ret_aligned[loser_cols].mean(axis=1)
+    mom = mom_winners - mom_losers
+    
+    y = portfolio_returns.values - rf_daily
+    X = np.column_stack([mkt.values, smb.values, hml.values, mom.values])
     X = sm.add_constant(X)
     
     model = sm.OLS(y, X).fit()
     
-    # Annualized Alpha (bps and %)
     daily_alpha = model.params[0]
-    ann_alpha = daily_alpha * 252
+    ann_alpha = daily_alpha * 252.0
     t_alpha = model.tvalues[0]
     p_alpha = model.pvalues[0]
-    r_squared = model.rsquared
+    r_squared = model.rsquared_adj
     
-    factor_names = ['Alpha (Ann.)', 'MKT', 'SMB', 'HML', 'RMW', 'CMA', 'MOM']
     loadings = {
         'Alpha (Ann.)': f"{ann_alpha*100:.2f}% (t={t_alpha:.2f}, p={p_alpha:.4f})",
-        'MKT': f"{model.params[1]:.3f} (t={model.tvalues[1]:.2f})",
-        'SMB': f"{model.params[2]:.3f} (t={model.tvalues[2]:.2f})",
-        'HML': f"{model.params[3]:.3f} (t={model.tvalues[3]:.2f})",
-        'RMW': f"{model.params[4]:.3f} (t={model.tvalues[4]:.2f})",
-        'CMA': f"{model.params[5]:.3f} (t={model.tvalues[5]:.2f})",
-        'MOM': f"{model.params[6]:.3f} (t={model.tvalues[6]:.2f})",
+        'MKT': f"{model.params[1]:.3f} (t={model.tvalues[1]:.2f}, p={model.pvalues[1]:.4f})",
+        'SMB': f"{model.params[2]:.3f} (t={model.tvalues[2]:.2f}, p={model.pvalues[2]:.4f})",
+        'HML': f"{model.params[3]:.3f} (t={model.tvalues[3]:.2f}, p={model.pvalues[3]:.4f})",
+        'MOM': f"{model.params[4]:.3f} (t={model.tvalues[4]:.2f}, p={model.pvalues[4]:.4f})",
         'R2': f"{r_squared:.4f}"
     }
     return loadings
@@ -89,22 +109,23 @@ def run_aum_capacity_analysis(w, test_ret, test_vol, train_ret, output_dir="resu
     
     return df_capacity
 
-def run_vix_regime_analysis(net_returns: pd.Series, test_dates: pd.DatetimeIndex, output_dir="results"):
+def run_vix_regime_analysis(net_returns: pd.Series, data_path: str = "data/sp500_daily.csv", output_dir: str = "results"):
     """
-    VIX Volatility Regime Analysis.
-    Categorizes performance into Low, Medium, and High Volatility regimes.
+    Market Volatility Regime Analysis using Real Asset Return Volatility.
+    Categorizes out-of-sample days into Low (<Q33), Medium (Q33-Q67), and High (>=Q67) volatility regimes.
     """
-    # Simulate VIX regime splits over out-of-sample period if live VIX is absent
-    n = len(net_returns)
-    np.random.seed(42)
-    vix_sim = 15 + np.cumsum(np.random.normal(0, 0.8, n))
-    vix_sim = np.clip(vix_sim, 10, 65)
+    df_ret, _ = load_raw_data(data_path)
+    mkt_ret = df_ret.reindex(net_returns.index).mean(axis=1).fillna(0.0)
     
-    q33, q67 = np.percentile(vix_sim, 33), np.percentile(vix_sim, 67)
+    # 21-day rolling volatility of market index
+    rolling_vol = mkt_ret.rolling(21, min_periods=5).std() * np.sqrt(252) * 100.0
+    rolling_vol = rolling_vol.bfill()
     
-    low_mask = vix_sim < q33
-    med_mask = (vix_sim >= q33) & (vix_sim < q67)
-    high_mask = vix_sim >= q67
+    q33, q67 = np.percentile(rolling_vol, 33), np.percentile(rolling_vol, 67)
+    
+    low_mask = rolling_vol < q33
+    med_mask = (rolling_vol >= q33) & (rolling_vol < q67)
+    high_mask = rolling_vol >= q67
     
     def regime_stats(mask):
         r = net_returns.values[mask]
@@ -138,9 +159,9 @@ def run_portfolio_stability(weight_seeds_list, tickers, output_dir="results"):
     selected_masks = weights > 0.001
     selection_prob = np.mean(selected_masks, axis=0)
     
-    # 2. Weight Stability: WS = 1 - 1/N * sum(Var(w_i))
+    # 2. Weight Stability: WS = 1 - sum(Var(w_i)) clipped to [0, 1]
     weight_vars = np.var(weights, axis=0)
-    ws = 1.0 - np.sum(weight_vars)
+    ws = float(np.clip(1.0 - np.sum(weight_vars), 0.0, 1.0))
     
     # 3. Pairwise Jaccard Similarity across active asset sets S
     jaccards = []

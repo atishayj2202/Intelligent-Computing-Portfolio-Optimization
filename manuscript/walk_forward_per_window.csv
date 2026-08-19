@@ -43,7 +43,7 @@ Window,Test Year,Algorithm,Net Sharpe,Net Ann Return,Max Drawdown
 5,2022,Ledoit-Wolf,-0.852,-23.91%,-30.28%
 5,2022,Max Sharpe,-0.845,-24.08%,-30.54%
 5,2022,Min Variance,-0.159,-2.75%,-15.01%
-5,2022,Equal Weight (1/N),-0.354,-7.72%,-20.11%
+5,2022,Equal Weight (1/N),-0.353,-7.72%,-20.11%
 6,2023,AOBL-SOS (Proposed),1.895,25.49%,-7.63%
 6,2023,SOS (Baseline),2.240,29.52%,-6.06%
 6,2023,GA,1.810,24.38%,-8.51%

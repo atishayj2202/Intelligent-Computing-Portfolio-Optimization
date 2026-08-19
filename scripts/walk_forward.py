@@ -13,8 +13,9 @@ from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_
 
 def jobson_korkie_memmel(ret1, ret2):
     """
-    Jobson-Korkie test with Memmel's correction for Sharpe ratio difference significance.
+    Jobson-Korkie test with Memmel's (2003) correction for Sharpe ratio difference significance.
     """
+    T = len(ret1)
     mu1, mu2 = np.mean(ret1), np.mean(ret2)
     var1, var2 = np.var(ret1, ddof=1), np.var(ret2, ddof=1)
     covar = np.cov(ret1, ret2)[0, 1]
@@ -22,9 +23,14 @@ def jobson_korkie_memmel(ret1, ret2):
     sh1 = mu1 / np.sqrt(var1 + 1e-12)
     sh2 = mu2 / np.sqrt(var2 + 1e-12)
     
-    T = len(ret1)
-    theta = (1.0 / (2.0 * T)) * (2.0 * var1**2 * var2**2 - 2.0 * var1 * var2 * covar + 0.5 * mu1**2 * var2**2 + 0.5 * mu2**2 * var1**2 - (mu1 * mu2 / (var1 * var2 + 1e-12)) * covar**2)
-    z = (sh1 - sh2) / np.sqrt(abs(theta) + 1e-12)
+    rho = covar / np.sqrt(var1 * var2 + 1e-12)
+    rho = np.clip(rho, -0.9999, 0.9999)
+    
+    # Memmel (2003) asymptotic variance formula:
+    var_diff = (1.0 / T) * (2.0 * (1.0 - rho) + 0.5 * (sh1**2 + sh2**2 - 2.0 * sh1 * sh2 * (rho**2)))
+    var_diff = max(1e-12, var_diff)
+    
+    z = (sh1 - sh2) / np.sqrt(var_diff)
     pval = 2.0 * (1.0 - stats.norm.cdf(abs(z)))
     return sh1, sh2, z, pval
 
