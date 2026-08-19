@@ -36,25 +36,46 @@ def jobson_korkie_memmel(ret1, ret2):
 
 def min_variance_portfolio(cov, cap=0.20, K=30):
     n = cov.shape[0]
-    def obj(w):
-        w_card = normalize_cap_cardinality(w, cap, K)
-        return np.dot(w_card.T, np.dot(cov, w_card))
-    bounds = [(0, cap) for _ in range(n)]
-    init_w = np.ones(n) / n
-    res = minimize(obj, init_w, method='L-BFGS-B', bounds=bounds)
-    return normalize_cap_cardinality(res.x, cap, K)
+    diag_vars = np.diag(cov)
+    K_eff = min(K, n)
+    top_k = np.argsort(diag_vars)[:K_eff]
+    cov_sub = cov[np.ix_(top_k, top_k)]
+    
+    def obj(w_sub):
+        return float(np.dot(w_sub.T, np.dot(cov_sub, w_sub)))
+        
+    cons = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0})
+    bounds = [(0, cap) for _ in range(K_eff)]
+    init_w = np.ones(K_eff) / K_eff
+    res = minimize(obj, init_w, method='SLSQP', bounds=bounds, constraints=cons)
+    
+    w_full = np.zeros(n)
+    w_full[top_k] = res.x
+    return normalize_cap_cardinality(w_full, cap, K)
 
 def max_sharpe_portfolio(mu, cov, rf_daily, cap=0.20, K=30):
     n = len(mu)
-    def obj(w):
-        w_card = normalize_cap_cardinality(w, cap, K)
-        ret = np.dot(w_card, mu)
-        vol = np.sqrt(np.dot(w_card.T, np.dot(cov, w_card)))
-        return -(ret - rf_daily) / (vol + 1e-12)
-    bounds = [(0, cap) for _ in range(n)]
-    init_w = np.ones(n) / n
-    res = minimize(obj, init_w, method='L-BFGS-B', bounds=bounds)
-    return normalize_cap_cardinality(res.x, cap, K)
+    vols = np.sqrt(np.maximum(1e-12, np.diag(cov)))
+    sharpes = (mu - rf_daily * 252) / vols
+    K_eff = min(K, n)
+    top_k = np.argsort(sharpes)[-K_eff:]
+    
+    mu_sub = mu[top_k]
+    cov_sub = cov[np.ix_(top_k, top_k)]
+    
+    def obj(w_sub):
+        ret = np.dot(w_sub, mu_sub)
+        vol = np.sqrt(max(1e-12, np.dot(w_sub.T, np.dot(cov_sub, w_sub))))
+        return -float((ret - rf_daily * 252) / (vol + 1e-12))
+        
+    cons = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0})
+    bounds = [(0, cap) for _ in range(K_eff)]
+    init_w = np.ones(K_eff) / K_eff
+    res = minimize(obj, init_w, method='SLSQP', bounds=bounds, constraints=cons)
+    
+    w_full = np.zeros(n)
+    w_full[top_k] = res.x
+    return normalize_cap_cardinality(w_full, cap, K)
 
 def ledoit_wolf_portfolio(mu, train_ret, rf_daily, cap=0.20, K=30):
     lw = LedoitWolf().fit(train_ret)
@@ -134,7 +155,7 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
         w_lw = ledoit_wolf_portfolio(mu, train_ret.values, rf_daily, cap=cap, K=K)
         w_maxsh = max_sharpe_portfolio(mu, cov, rf_daily, cap=cap, K=K)
         w_minvar = min_variance_portfolio(cov, cap=cap, K=K)
-        w_eq = normalize_cap_cardinality(np.ones(dim), cap=cap, K=K)
+        w_eq = np.ones(dim) / float(dim) # Canonical DeMiguel et al. (2009) 1/N benchmark
         
         algo_weights["Ledoit-Wolf"] = [w_lw]
         algo_weights["Max Sharpe"] = [w_maxsh]
@@ -168,7 +189,10 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
     agg_summary = []
     for alg in algorithm_names:
         rets = np.array(chained_returns[alg])
-        ann_r = np.mean(rets) * 252 - rf_annual
+        total_growth = np.prod(1.0 + rets)
+        n_days_total = len(rets)
+        cagr = (total_growth ** (252.0 / n_days_total)) - 1.0 if total_growth > 0 else -1.0
+        ann_r = cagr - rf_annual
         ann_v = np.std(rets, ddof=1) * np.sqrt(252) + 1e-12
         sh = ann_r / ann_v
         

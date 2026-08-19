@@ -57,7 +57,10 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
     val_history = np.array(val_history)
     net_returns = np.insert(np.diff(val_history) / val_history[:-1], 0, val_history[0]-1)
     
-    ann_ret = np.mean(net_returns) * 252 - rf_annual
+    total_growth = val_history[-1] / 1.0
+    n_days_total = len(net_returns)
+    cagr = (total_growth ** (252.0 / n_days_total)) - 1.0 if total_growth > 0 else -1.0
+    ann_ret = cagr - rf_annual
     ann_vol = np.std(net_returns, ddof=1) * np.sqrt(252) + 1e-12
     sharpe = ann_ret / ann_vol
     
@@ -136,7 +139,10 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
     val_history = np.array(val_history)
     net_returns = np.insert(np.diff(val_history) / val_history[:-1], 0, val_history[0]/aum - 1)
     
-    ann_ret = np.mean(net_returns) * 252 - rf_annual
+    total_growth = val_history[-1] / aum
+    n_days_total = len(net_returns)
+    cagr = (total_growth ** (252.0 / n_days_total)) - 1.0 if total_growth > 0 else -1.0
+    ann_ret = cagr - rf_annual
     ann_vol = np.std(net_returns, ddof=1) * np.sqrt(252) + 1e-12
     sharpe = ann_ret / ann_vol
     

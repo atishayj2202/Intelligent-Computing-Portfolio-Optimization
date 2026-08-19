@@ -150,7 +150,10 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5,
     ablation_summary = []
     for var_name in ablation_variants:
         rets = np.array(chained_variant_returns[var_name])
-        ann_r = np.mean(rets) * 252 - rf_annual
+        total_growth = np.prod(1.0 + rets)
+        n_days_total = len(rets)
+        cagr = (total_growth ** (252.0 / n_days_total)) - 1.0 if total_growth > 0 else -1.0
+        ann_r = cagr - rf_annual
         ann_v = np.std(rets, ddof=1) * np.sqrt(252) + 1e-12
         sh = ann_r / ann_v
         
