@@ -267,18 +267,18 @@ To isolate the exact source of algorithmic outperformance, Table \ref{tab:ablati
 \toprule
 \textbf{Ablation Variant} & \textbf{Net Sharpe} & \textbf{Net Return} & \textbf{Max Drawdown} & \textbf{Calmar} \\
 \midrule
-Variant F (No Drawdown Penalty) & 0.779 & 16.57\% & --32.89\% & 0.504 \\
-Variant A (Plain SOS) & 0.808 & 16.59\% & --33.13\% & 0.501 \\
-Variant B (Static OBL) & 0.865 & 17.75\% & --31.97\% & 0.555 \\
-Variant C (Random Restart) & 0.808 & 16.59\% & --33.13\% & 0.501 \\
-Variant D (Adaptive Trigger Only) & 0.808 & 16.59\% & --33.13\% & 0.501 \\
-Variant E (Centroid Opposition Only) & 0.865 & 17.75\% & --31.97\% & 0.555 \\
-\textbf{Variant G (Full AOBL-SOS)} & \textbf{0.808} & \textbf{16.59\%} & \textbf{--33.13\%} & \textbf{0.501} \\
+Variant F (No Drawdown Penalty) & 0.747 & 15.42\% & --32.34\% & 0.477 \\
+Variant A (Plain SOS) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant B (Static OBL) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
+Variant C (Random Restart) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant D (Adaptive Trigger Only) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant E (Centroid Opposition Only) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
+\textbf{Variant G (Full AOBL-SOS)} & \textbf{0.771} & \textbf{16.00\%} & \textbf{--32.72\%} & \textbf{0.489} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ablation results confirm that removing the drawdown penalty (Variant F) reduces net Sharpe ratio from 0.808 to 0.779, while incorporating static centroid-based opposition (Variant B and E) provides exploratory acceleration. Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
+The ablation results confirm that removing the drawdown penalty (Variant F) reduces net Sharpe ratio from 0.771 to 0.747, while incorporating static centroid-based opposition (Variant B and E) provides exploratory acceleration. Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
 
 \subsection{Statistical Significance of Outperformance}
 To evaluate the statistical robustness of Sharpe ratio differences, we execute the Jobson-Korkie hypothesis test with Memmel's (2003) asymptotic variance correction on daily out-of-sample returns. Comparing AOBL-SOS against competing solvers yields:
@@ -305,7 +305,7 @@ To evaluate model selection risk under multiple testing, we execute Combinatoria
 Probability of Backtest Overfitting (PBO) & \textbf{0.5110} ($51.10\%$) \\
 Probabilistic Sharpe Ratio (PSR) & \textbf{1.0000} ($100\%$) \\
 Deflated Sharpe Ratio (DSR) & \textbf{0.0000} \\
-Implied Hurdle Sharpe ($SR_0$) & 2.3259 \\
+Implied Hurdle Sharpe ($SR_0$) & 2.6228 \\
 Weight Stability Index (WS) & \textbf{0.9567} \\
 Mean Jaccard Overlap & \textbf{0.2689} \\
 \bottomrule
@@ -323,9 +323,9 @@ Table \ref{tab:factor_reg} details the multi-factor linear regression of AOBL-SO
 \label{tab:factor_reg}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Factor Metric} & \textbf{Coefficient ($\beta$)} & \textbf{$t$-Statistic} & \textbf{$p$-Value} \\
+\textbf{Factor Metric} & \textbf{Coefficient ($\beta$)} & \textbf{t-Statistic} & \textbf{p-Value} \\
 \midrule
-Annualized Alpha ($\alpha$) & --3.12\% & --0.96 & 0.3388 \\
+Intercept (Alpha, Ann.) & --3.12\% & --0.96 & 0.3388 \\
 Market (MKT) & \textbf{0.945} & \textbf{73.29} & \textbf{$< 0.001$} \\
 Size (SMB) & --0.273 & --6.32 & $< 0.001$ \\
 Value (HML) & 0.344 & 13.23 & $< 0.001$ \\
@@ -347,16 +347,16 @@ Table \ref{tab:vix_regime} evaluates strategy performance across market volatili
 \label{tab:vix_regime}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Market Volatility Regime} & \textbf{Net Sharpe} & \textbf{Net Ann. Return} \\
+\textbf{Market Volatility Regime} & \textbf{Net Sharpe} & \textbf{Net Ann. Return (CAGR)} \\
 \midrule
-Low Volatility ($< Q_{33}$) & \textbf{2.772} & \textbf{30.42\%} \\
-Medium Volatility ($Q_{33}$--$Q_{67}$) & 0.472 & 7.49\% \\
-High Volatility ($\ge Q_{67}$) & 0.608 & 18.21\% \\
+Low Volatility ($< Q_{33}$) & \textbf{2.830} & \textbf{31.07\%} \\
+Medium Volatility ($Q_{33}$--$Q_{67}$) & 0.527 & 8.34\% \\
+High Volatility ($\ge Q_{67}$) & 0.561 & 17.09\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-AOBL-SOS generates strong risk-adjusted returns during low-volatility regimes (Sharpe 2.772, 30.42\% annualized return) and maintains positive Sharpe ratios during high-volatility market stress (Sharpe 0.608).
+AOBL-SOS generates strong risk-adjusted returns during low-volatility regimes (Sharpe 2.830, 31.07\% annualized CAGR return) and maintains positive Sharpe ratios during high-volatility market stress (Sharpe 0.561).
 
 \subsection{AUM Capacity \& Execution Sensitivity}
 Figure \ref{fig:aum_capacity} evaluates strategy capacity under scaling AUM ($10\text{M}$ to $5\text{B}$) under Almgren-Chriss market impact. The fractional decay in Sharpe across $500\times$ AUM scaling is minimal because a $\$100\text{M}$ portfolio executing monthly rebalancing in liquid S\&P 500 constituents generates trade sizes that represent a small fraction of Average Daily Volume.
