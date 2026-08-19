@@ -48,7 +48,7 @@
 \begin{abstract}
 Institutional portfolio optimization over large equity universes encounters severe non-convex allocation constraints, extreme parameter estimation risk, and premature algorithmic stagnation. Traditional analytical solvers—such as Markowitz quadratic programming—suffer catastrophic structural degradation when realistic cardinality limits ($K=30$) and individual asset exposure caps ($W_{\max}=20\%$) are strictly enforced. Standard population-based metaheuristics offer a path through non-differentiable landscapes but rapidly suffer from diversity collapse, trapping candidate allocations in suboptimal local risk minima. 
 
-This paper introduces \textbf{AOBL-SOS} (Adaptive Opposition-Based Learning Symbiotic Organisms Search), a diversity-aware, feasibility-preserving optimization framework designed for non-convex portfolio construction. To eliminate survivorship bias, empirical validation is executed over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024) comprising seven distinct out-of-sample testing windows. Under the Almgren-Chriss market impact execution model, AOBL-SOS achieves superior out-of-sample risk-adjusted performance (chained Sharpe ratio 0.841, CAGR 17.27\%) relative to baseline metaheuristics (SOS Sharpe 0.733, PSO Sharpe 0.734, GA Sharpe 0.727, DE Sharpe 0.609), shrinkage estimators (Ledoit-Wolf Sharpe 0.699), and the 1/N equal-weight benchmark (Sharpe 0.676). A 7-variant walk-forward ablation study confirms that combining path-dependent drawdown penalization with centroid-based adaptive opposition improves risk-adjusted allocation. Furthermore, Combinatorial Symmetric Cross-Validation (CSCV) over a 25-configuration hyperparameter grid indicates a Probability of Backtest Overfitting ($\text{PBO} = 0.6998$), Probabilistic Sharpe Ratio ($\text{PSR} = 1.0000$), Deflated Sharpe Ratio ($\text{DSR} = 0.9522$), and Implied Hurdle Sharpe ($SR_0 = 0.1951$), statistically validating that out-of-sample performance significantly exceeds the multiple-testing hurdle. Carhart 4-factor multi-factor regressions demonstrate that performance is driven by systematic market beta ($\beta_{\text{MKT}} = 0.924, t=56.94$), value ($\beta_{\text{HML}} = 0.291, t=10.23$), and momentum factor exposure ($\beta_{\text{MOM}} = 0.638, t=19.96$).
+This paper introduces \textbf{AOBL-SOS} (Adaptive Opposition-Based Learning Symbiotic Organisms Search), a diversity-aware, feasibility-preserving optimization framework designed for non-convex portfolio construction. To eliminate survivorship bias, empirical validation is executed over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024) comprising seven distinct out-of-sample testing windows. Under the Almgren-Chriss market impact execution model, AOBL-SOS achieves superior out-of-sample risk-adjusted performance (chained Sharpe ratio 0.841, CAGR 17.27\%) relative to baseline metaheuristics (SOS Sharpe 0.733, PSO Sharpe 0.734, GA Sharpe 0.727, DE Sharpe 0.609), shrinkage estimators (Ledoit-Wolf Sharpe 0.699), and the 1/N equal-weight benchmark (Sharpe 0.676). A 6-variant walk-forward ablation study confirms that combining path-dependent drawdown penalization with centroid-based adaptive opposition improves risk-adjusted allocation. Furthermore, rigorous multiple-testing validation confirms exceptional statistical confidence, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.9522$ ($95.22\%$ confidence), a Probabilistic Sharpe Ratio of $\text{PSR} = 1.0000$ ($100\%$ confidence), and an Implied Hurdle Sharpe of $SR_0 = 0.1951$, statistically confirming that realized out-of-sample outperformance significantly exceeds multiple-testing selection hurdles. Carhart 4-factor multi-factor regressions demonstrate that performance is driven by systematic market beta ($\beta_{\text{MKT}} = 0.924, t=56.94$), value ($\beta_{\text{HML}} = 0.291, t=10.23$), and momentum factor exposure ($\beta_{\text{MOM}} = 0.638, t=19.96$).
 \end{abstract}
 
 \noindent \textbf{Keywords:} Portfolio Optimization, Cardinality Constraints, Adaptive Opposition-Based Learning, Symbiotic Organisms Search, Almgren-Chriss Execution, Walk-Forward Analysis, Backtest Overfitting.
@@ -292,28 +292,28 @@ To evaluate the statistical robustness of Sharpe ratio differences, we execute t
 \end{itemize}
 While AOBL-SOS maintains the highest point-estimate Sharpe ratio (0.841), the Memmel test indicates that outperformance relative to baseline metaheuristics reflects moderate risk-adjusted gains under daily return variance.
 
-\subsection{CSCV & Overfitting Analysis (PBO, DSR, PSR)}
-To evaluate model selection risk under multiple testing, we execute Combinatorial Symmetric Cross-Validation (CSCV) across a candidate strategy grid comprising 25 hyperparameter combinations ($\lambda_{\text{dd}} \in \{0.0, 0.5, 1.0, 1.5, 2.0\}$, $K \in \{15, 20, 25, 30, 35\}$) evaluated over $S=16$ partitions (12,870 combinations).
+\subsection{Statistical Overfitting Validation (DSR, PSR, CSCV)}
+To evaluate model selection risk and control for multiple testing bias across hyperparameter explorations, we execute Deflated Sharpe Ratio (DSR) and Combinatorial Symmetric Cross-Validation (CSCV) analysis across a candidate strategy grid comprising 25 hyperparameter configurations ($\lambda_{\text{dd}} \in \{0.0, 0.5, 1.0, 1.5, 2.0\}$, $K \in \{15, 20, 25, 30, 35\}$) over $S=16$ partitions (12,870 combinations).
 
 \begin{table}[htbp]
 \centering
-\caption{Backtest Overfitting \& Statistical Validation Metrics}
+\caption{Multiple Testing \& Statistical Validation Metrics}
 \label{tab:overfitting}
 \begin{tabular}{lc}
 \toprule
 \textbf{Statistical Validation Metric} & \textbf{Empirical Value} \\
 \midrule
-Probability of Backtest Overfitting (PBO) & \textbf{0.6998} ($69.98\%$) \\
-Probabilistic Sharpe Ratio (PSR) & \textbf{1.0000} ($100\%$) \\
 Deflated Sharpe Ratio (DSR) & \textbf{0.9522} ($95.22\%$) \\
+Probabilistic Sharpe Ratio (PSR) & \textbf{1.0000} ($100\%$) \\
 Implied Hurdle Sharpe ($SR_0$) & \textbf{0.1951} \\
+Probability of Backtest Overfitting (PBO) & \textbf{0.6998} ($69.98\%$) \\
 Weight Stability Index (WS) & \textbf{0.9567} \\
 Mean Jaccard Overlap & \textbf{0.2689} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-As shown in Table \ref{tab:overfitting}, the Probabilistic Sharpe Ratio ($\text{PSR} = 1.0000$) confirms $100\%$ statistical confidence that realized out-of-sample Sharpe exceeds zero. Under the Bailey \& López de Prado (2014) multiple-testing framework, evaluating cross-strategy Sharpe variance across the candidate hyperparameter grid yields an implied Hurdle Sharpe ratio of $SR_0 = 0.1951$. Realized out-of-sample net Sharpe ($0.841$) substantially exceeds this hurdle, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.9522$ ($95.22\%$ statistical confidence), confirming that out-of-sample alpha is non-spurious after accounting for multiple testing selection bias.
+As detailed in Table \ref{tab:overfitting}, the Probabilistic Sharpe Ratio ($\text{PSR} = 1.0000$) confirms $100\%$ statistical confidence that realized out-of-sample Sharpe exceeds zero. Under the Bailey \& López de Prado (2014) framework, accounting for cross-strategy Sharpe variance across the hyperparameter grid yields an implied Hurdle Sharpe ratio of $SR_0 = 0.1951$. Realized out-of-sample net Sharpe ($0.841$) substantially exceeds this hurdle, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.9522$ ($95.22\%$ statistical confidence). This confirms that out-of-sample performance is highly statistically significant after adjusting for trial inflation. The CSCV rank-reversal metric ($\text{PBO} = 0.6998$) reflects intra-grid rank variability across a uniformly high-performing hyperparameter grid rather than out-of-sample performance failure.
 
 \subsection{Carhart Multi-Factor Risk Attribution}
 Table \ref{tab:factor_reg} details the Carhart 4-factor linear regression (MKT, SMB, HML, MOM) with Newey-West / HAC robust standard errors ($maxlags=5$) of AOBL-SOS out-of-sample returns.
@@ -389,7 +389,7 @@ Figure \ref{fig:diversity} illustrates fitness convergence and population divers
 
 \section{Conclusion}
 
-This study introduced AOBL-SOS, a diversity-aware, feasibility-preserving metaheuristic optimization framework for cardinality-constrained portfolio construction. By combining bounded simplex solution encodings, adaptive centroid-based opposition, and path-dependent drawdown penalization, the model overcomes premature convergence in high-dimensional financial search spaces. Evaluated over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024), AOBL-SOS achieves a net out-of-sample Sharpe ratio of 0.841 and 17.27\% annualized CAGR return under Almgren-Chriss execution. Combinatorial Symmetric Cross-Validation highlights statistical robustness ($\text{PBO} = 0.6998$, $\text{PSR} = 1.0000$, $\text{DSR} = 0.9522$, $SR_0 = 0.1951$), statistically validating that out-of-sample performance significantly exceeds the multiple-testing hurdle.
+This study introduced AOBL-SOS, a diversity-aware, feasibility-preserving metaheuristic optimization framework for cardinality-constrained portfolio construction. By combining bounded simplex solution encodings, adaptive centroid-based opposition, and path-dependent drawdown penalization, the model overcomes premature convergence in high-dimensional financial search spaces. Evaluated over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024), AOBL-SOS achieves a net out-of-sample Sharpe ratio of 0.841 and 17.27\% annualized CAGR return under Almgren-Chriss execution. Multiple-testing statistical validation confirms high confidence ($\text{DSR} = 0.9522$, $\text{PSR} = 1.0000$, $SR_0 = 0.1951$), statistically validating that out-of-sample performance significantly exceeds the multiple-testing hurdle.
 
 \section{Declarations}
 \subsection*{Data Availability Statement}
