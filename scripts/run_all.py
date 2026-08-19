@@ -151,7 +151,7 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     pop = np.array([map_func(p) for p in pop])
     _, w_best, _ = AOBL_SOS(obj_dd, pop, map_func, iters=150, is_portfolio=True)
     
-    df_capacity = run_aum_capacity_analysis(w_best, test_ret, test_vol, train_ret, output_dir=output_dir)
+    df_capacity = run_aum_capacity_analysis(aobl_dates_series, output_dir=output_dir)
     
     seed_weights = []
     for s in range(20):

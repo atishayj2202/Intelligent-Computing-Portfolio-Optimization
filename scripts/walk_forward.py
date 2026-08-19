@@ -185,7 +185,7 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
     df_wf = pd.DataFrame(window_results)
     df_wf.to_csv(os.path.join(output_dir, "walk_forward_per_window.csv"), index=False)
     
-    # Evaluate aggregate continuous 2018-2025 OOS metrics across full walk-forward horizon
+    # Evaluate aggregate continuous 2018-2024 OOS metrics across full walk-forward horizon
     agg_summary = []
     for alg in algorithm_names:
         rets = np.array(chained_returns[alg])
@@ -204,7 +204,7 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
         
         agg_summary.append({
             'Algorithm': alg,
-            'Walk-Forward Horizon': '2018-2025 (Chained OOS)',
+            'Walk-Forward Horizon': '2018-2024 (Chained OOS)',
             'Net Sharpe': f"{sh:.3f}",
             'Net Ann Return': f"{ann_r*100:.2f}%",
             'Net Ann Vol': f"{ann_v*100:.2f}%",
@@ -214,5 +214,37 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
         
     df_agg = pd.DataFrame(agg_summary)
     df_agg.to_csv(os.path.join(output_dir, "master_walk_forward_chained.csv"), index=False)
+    
+    # Generate Figure 1: Cumulative Returns and Drawdowns across 2018-2024
+    import matplotlib.pyplot as plt
+    dates = pd.date_range(start="2018-01-01", periods=len(chained_returns["AOBL-SOS (Proposed)"]), freq="B")
+    
+    plt.figure(figsize=(10, 4.5))
+    for alg, color, ls in [("AOBL-SOS (Proposed)", "#D85A30", "-"), ("SOS (Baseline)", "steelblue", "--"), ("Equal Weight (1/N)", "gray", ":")]:
+        cum = np.cumprod(1 + np.array(chained_returns[alg]))
+        plt.plot(dates, cum, label=alg, color=color, linestyle=ls, linewidth=2 if "AOBL" in alg else 1.5)
+    plt.title("Chained Walk-Forward Out-of-Sample Cumulative Net Returns (2018--2024)")
+    plt.xlabel("Date (2018--2024 Horizon)")
+    plt.ylabel("Growth of $1.00")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "cumulative_net_returns.png"), dpi=200)
+    plt.close()
+    
+    plt.figure(figsize=(10, 3.5))
+    for alg, color, ls in [("AOBL-SOS (Proposed)", "#D85A30", "-"), ("SOS (Baseline)", "steelblue", "--"), ("Equal Weight (1/N)", "gray", ":")]:
+        cum = np.cumprod(1 + np.array(chained_returns[alg]))
+        running_max = np.maximum.accumulate(cum)
+        dd = (cum - running_max) / running_max
+        plt.plot(dates, dd * 100, label=alg, color=color, linestyle=ls, linewidth=1.5)
+    plt.title("Chained Walk-Forward Out-of-Sample Drawdown Profile (%)")
+    plt.xlabel("Date (2018--2024 Horizon)")
+    plt.ylabel("Drawdown (%)")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "drawdown_profile.png"), dpi=200)
+    plt.close()
     
     return df_wf, df_agg, chained_returns

@@ -14,12 +14,20 @@ def compute_dsr(realized_sr: float, sr_var: float, n_trials: int, n_samples: int
     """
     Deflated Sharpe Ratio (DSR) per Bailey and López de Prado (2014).
     Corrects for multiple testing across n_trials strategy configurations.
+    Scales annualized inputs (realized_sr, sr_var) consistently to daily return units.
     """
     euler_gamma = 0.5772156649
     e_max_sr = (1 - euler_gamma) * stats.norm.ppf(1 - 1.0 / n_trials) + euler_gamma * stats.norm.ppf(1 - 1.0 / (n_trials * np.e))
-    benchmark_sr = np.sqrt(sr_var) * e_max_sr
+    benchmark_sr_ann = np.sqrt(sr_var) * e_max_sr
     
-    return compute_psr(realized_sr, benchmark_sr, n_samples, skewness, kurtosis), benchmark_sr
+    # Scale annualized Sharpe and benchmark to daily units for n_samples (days)
+    sr_daily = realized_sr / np.sqrt(252.0)
+    bench_daily = benchmark_sr_ann / np.sqrt(252.0)
+    
+    sr_std_daily = np.sqrt((1.0 + 0.5 * sr_daily**2 - skewness * sr_daily + (kurtosis - 3.0) / 4.0 * sr_daily**2) / (n_samples - 1.0))
+    z = (sr_daily - bench_daily) / sr_std_daily
+    dsr = float(stats.norm.cdf(z))
+    return dsr, benchmark_sr_ann
 
 def compute_min_btl(realized_sr: float, benchmark_sr: float, skewness: float = 0.0, kurtosis: float = 3.0, alpha: float = 0.05):
     """
