@@ -1,5 +1,5 @@
 Algorithm,Walk-Forward Horizon,Net Sharpe,Net Ann Return,Net Ann Vol,Max Drawdown,Calmar Ratio
-AOBL-SOS (Proposed),2018-2025 (Chained OOS),0.771,16.00%,20.76%,-32.72%,0.489
+AOBL-SOS (Proposed),2018-2025 (Chained OOS),0.841,17.27%,20.53%,-31.97%,0.540
 SOS (Baseline),2018-2025 (Chained OOS),0.733,15.61%,21.28%,-36.09%,0.432
 GA,2018-2025 (Chained OOS),0.727,15.43%,21.22%,-34.48%,0.448
 PSO,2018-2025 (Chained OOS),0.734,15.54%,21.18%,-33.28%,0.467

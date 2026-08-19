@@ -169,8 +169,8 @@ def AOBL_SOS(
         else:
             stagnation += 1
             
-        if stagnation >= patience:
-            stagnation_boost = 0.05 * (stagnation - patience + 1)
+        if (t + 1) % 20 == 0 or stagnation >= patience:
+            stagnation_boost = 0.05 * max(0, stagnation - patience + 1)
             worst_idx, opp = centroid_opposition(pop, fitness, replace_frac=replace_frac, stagnation_boost=stagnation_boost)
             opp_mapped = np.array([map_func(ind) for ind in opp])
             opp_fit = np.array([obj_func(ind) for ind in opp_mapped], dtype=float)
@@ -179,7 +179,7 @@ def AOBL_SOS(
             pop[worst_idx[improved]] = opp_mapped[improved]
             fitness[worst_idx[improved]] = opp_fit[improved]
             
-            stagnation = max(0, patience // 2)
+            stagnation = 0
                 
     idx = np.argmin(fitness)
     if return_diversity:

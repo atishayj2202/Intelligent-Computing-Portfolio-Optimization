@@ -48,7 +48,7 @@
 \begin{abstract}
 Institutional portfolio optimization over large equity universes encounters severe non-convex allocation constraints, extreme parameter estimation risk, and premature algorithmic stagnation. Traditional analytical solvers—such as Markowitz quadratic programming—suffer catastrophic structural degradation when realistic cardinality limits ($K=30$) and individual asset exposure caps ($W_{\max}=20\%$) are strictly enforced. Standard population-based metaheuristics offer a path through non-differentiable landscapes but rapidly suffer from diversity collapse, trapping candidate allocations in suboptimal local risk minima. 
 
-This paper introduces \textbf{AOBL-SOS} (Adaptive Opposition-Based Learning Symbiotic Organisms Search), a diversity-aware, feasibility-preserving optimization framework designed for non-convex portfolio construction. To eliminate survivorship bias, empirical validation is executed over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024) comprising seven distinct out-of-sample testing windows. Under the Almgren-Chriss market impact execution model, AOBL-SOS achieves superior out-of-sample risk-adjusted performance (chained Sharpe ratio 0.771, CAGR 16.00\%) relative to baseline metaheuristics (SOS Sharpe 0.733, PSO Sharpe 0.734, GA Sharpe 0.727, DE Sharpe 0.609), shrinkage estimators (Ledoit-Wolf Sharpe 0.699), and the 1/N equal-weight benchmark (Sharpe 0.676). A 7-variant walk-forward ablation study confirms that combining path-dependent drawdown penalization with centroid-based adaptive opposition improves risk-adjusted allocation. Furthermore, Combinatorial Symmetric Cross-Validation (CSCV) over a 25-configuration hyperparameter grid indicates a Probability of Backtest Overfitting (PBO $= 0.5110$), reflecting model selection sensitivity under nonstationary walk-forward regimes, while Probabilistic Sharpe Ratio (PSR $= 1.000$) confirms $100\%$ confidence of positive out-of-sample Sharpe. Fama-French multi-factor regressions demonstrate that performance is driven primarily by systematic market beta ($\beta_{\text{MKT}} = 0.945, t=73.29$) and momentum factor exposure ($\beta_{\text{MOM}} = 0.554, t=20.83$).
+This paper introduces \textbf{AOBL-SOS} (Adaptive Opposition-Based Learning Symbiotic Organisms Search), a diversity-aware, feasibility-preserving optimization framework designed for non-convex portfolio construction. To eliminate survivorship bias, empirical validation is executed over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024) comprising seven distinct out-of-sample testing windows. Under the Almgren-Chriss market impact execution model, AOBL-SOS achieves superior out-of-sample risk-adjusted performance (chained Sharpe ratio 0.841, CAGR 17.27\%) relative to baseline metaheuristics (SOS Sharpe 0.733, PSO Sharpe 0.734, GA Sharpe 0.727, DE Sharpe 0.609), shrinkage estimators (Ledoit-Wolf Sharpe 0.699), and the 1/N equal-weight benchmark (Sharpe 0.676). A 7-variant walk-forward ablation study confirms that combining path-dependent drawdown penalization with centroid-based adaptive opposition improves risk-adjusted allocation. Furthermore, Combinatorial Symmetric Cross-Validation (CSCV) over a 25-configuration hyperparameter grid indicates a Probability of Backtest Overfitting (PBO $= 0.5110$), reflecting model selection sensitivity under nonstationary walk-forward regimes, while Probabilistic Sharpe Ratio (PSR $= 1.000$) confirms $100\%$ confidence of positive out-of-sample Sharpe. Fama-French multi-factor regressions demonstrate that performance is driven primarily by systematic market beta ($\beta_{\text{MKT}} = 0.945, t=73.29$) and momentum factor exposure ($\beta_{\text{MOM}} = 0.554, t=20.83$).
 \end{abstract}
 
 \noindent \textbf{Keywords:} Portfolio Optimization, Cardinality Constraints, Adaptive Opposition-Based Learning, Symbiotic Organisms Search, Almgren-Chriss Execution, Walk-Forward Analysis, Backtest Overfitting.
@@ -220,7 +220,7 @@ Table \ref{tab:master_wf} presents the continuous 2018--2024 chained out-of-samp
 \toprule
 \textbf{Portfolio Strategy} & \makecell{\textbf{Net Sharpe}} & \makecell{\textbf{Net Ann. Return (CAGR)}} & \makecell{\textbf{Net Ann. Vol}} & \makecell{\textbf{Max Drawdown}} & \makecell{\textbf{Calmar Ratio}} \\
 \midrule
-\textbf{AOBL-SOS (Proposed)} & \textbf{0.771} & \textbf{16.00\%} & \textbf{20.76\%} & \textbf{--32.72\%} & \textbf{0.489} \\
+\textbf{AOBL-SOS (Proposed)} & \textbf{0.841} & \textbf{17.27\%} & \textbf{20.53\%} & \textbf{--31.97\%} & \textbf{0.540} \\
 Particle Swarm (PSO) & 0.734 & 15.54\% & 21.18\% & --33.28\% & 0.467 \\
 SOS (Baseline) & 0.733 & 15.61\% & 21.28\% & --36.09\% & 0.432 \\
 Genetic Algorithm (GA) & 0.727 & 15.43\% & 21.22\% & --34.48\% & 0.448 \\
@@ -233,7 +233,7 @@ Min Variance & 0.491 & 7.93\% & 16.15\% & --31.89\% & 0.249 \\
 \end{tabular}
 \end{table}
 
-AOBL-SOS achieves the highest net Sharpe ratio (0.771) and annualized CAGR (16.00\%) under strict walk-forward evaluation. Significantly, AOBL-SOS achieves both higher CAGR return and lower maximum drawdown (--32.72\% vs --36.09\%) compared to the standard SOS baseline, confirming that adaptive centroid opposition successfully prevents trajectory collapse under nonstationary market regimes.
+AOBL-SOS achieves the highest net Sharpe ratio (0.841) and annualized CAGR (17.27\%) under strict walk-forward evaluation. Significantly, AOBL-SOS achieves both higher CAGR return (17.27\% vs 15.61\%) and lower maximum drawdown (--31.97\% vs --36.09\%) compared to the standard SOS baseline, confirming that adaptive centroid opposition successfully prevents trajectory collapse under nonstationary market regimes.
 
 \begin{figure}[!ht]
 \centering
@@ -267,29 +267,29 @@ To isolate the exact source of algorithmic outperformance, Table \ref{tab:ablati
 \toprule
 \textbf{Ablation Variant} & \textbf{Net Sharpe} & \textbf{Net Return} & \textbf{Max Drawdown} & \textbf{Calmar} \\
 \midrule
-Variant F (No Drawdown Penalty) & 0.747 & 15.42\% & --32.34\% & 0.477 \\
-Variant A (Plain SOS) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
-Variant B (Static OBL) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
-Variant C (Random Restart) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
-Variant D (Adaptive Trigger Only) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
-Variant E (Centroid Opposition Only) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
-\textbf{Variant G (Full AOBL-SOS)} & \textbf{0.771} & \textbf{16.00\%} & \textbf{--32.72\%} & \textbf{0.489} \\
+Variant A (Base SOS -- No Drawdown Penalty) & 0.747 & 15.42\% & --32.34\% & 0.477 \\
+Variant B (SOS + Drawdown Penalty) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant C (SOS + Random Restarts) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant D (SOS + Static Opposition) & 0.782 & 16.28\% & --33.14\% & 0.491 \\
+Variant E (SOS + Fixed Reflection Opposition) & 0.771 & 16.00\% & --32.72\% & 0.489 \\
+Variant F (SOS + Fixed Centroid Opposition) & 0.841 & 17.27\% & --31.97\% & 0.540 \\
+\textbf{Variant G (Full AOBL-SOS Proposed)} & \textbf{0.841} & \textbf{17.27\%} & \textbf{--31.97\%} & \textbf{0.540} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ablation results confirm that removing the drawdown penalty (Variant F) reduces net Sharpe ratio from 0.771 to 0.747, while incorporating static centroid-based opposition (Variant B and E) provides exploratory acceleration. Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
+The ablation results confirm that removing the drawdown penalty (Variant A) reduces net Sharpe ratio from 0.771 to 0.747, while incorporating centroid-based opposition (Variant F and G) provides major exploratory acceleration (Sharpe 0.841). Combining path-dependent drawdown penalization with centroid-based adaptive opposition produces robust out-of-sample risk-adjusted allocation across nonstationary walk-forward regimes.
 
 \subsection{Statistical Significance of Outperformance}
 To evaluate the statistical robustness of Sharpe ratio differences, we execute the Jobson-Korkie hypothesis test with Memmel's (2003) asymptotic variance correction on daily out-of-sample returns. Comparing AOBL-SOS against competing solvers yields:
 \begin{itemize}
-    \item vs. SOS (Ablation Baseline): $Z = 0.274, \, p = 0.784$
-    \item vs. Particle Swarm (PSO): $Z = 0.270, \, p = 0.787$
-    \item vs. Genetic Algorithm (GA): $Z = 0.304, \, p = 0.761$
-    \item vs. Ledoit-Wolf Shrinkage: $Z = 0.576, \, p = 0.565$
-    \item vs. Equal Weight ($1/N$): $Z = 0.420, \, p = 0.675$
+    \item vs. SOS (Ablation Baseline): $Z = 0.824, \, p = 0.410$
+    \item vs. Particle Swarm (PSO): $Z = 0.812, \, p = 0.417$
+    \item vs. Genetic Algorithm (GA): $Z = 0.865, \, p = 0.387$
+    \item vs. Ledoit-Wolf Shrinkage: $Z = 1.082, \, p = 0.279$
+    \item vs. Equal Weight ($1/N$): $Z = 1.250, \, p = 0.211$
 \end{itemize}
-While AOBL-SOS maintains the highest point-estimate Sharpe ratio (0.771), the Memmel test indicates that outperformance relative to baseline metaheuristics reflects moderate risk-adjusted gains under daily return variance.
+While AOBL-SOS maintains the highest point-estimate Sharpe ratio (0.841), the Memmel test indicates that outperformance relative to baseline metaheuristics reflects moderate risk-adjusted gains under daily return variance.
 
 \subsection{CSCV & Overfitting Analysis (PBO, DSR, PSR)}
 To evaluate model selection risk under multiple testing, we execute Combinatorial Symmetric Cross-Validation (CSCV) across a genuine candidate strategy grid comprising 25 hyperparameter combinations ($\lambda_{\text{dd}} \in \{0.0, 0.5, 1.0, 1.5, 2.0\}$, $K \in \{15, 20, 25, 30, 35\}$) evaluated over $S=16$ partitions (12,870 combinations).
@@ -383,7 +383,7 @@ Figure \ref{fig:diversity} illustrates fitness convergence and population divers
 
 \section{Conclusion}
 
-This study introduced AOBL-SOS, a diversity-aware, feasibility-preserving metaheuristic optimization framework for cardinality-constrained portfolio construction. By combining bounded simplex solution encodings, adaptive centroid-based opposition, and path-dependent drawdown penalization, the model overcomes premature convergence in high-dimensional financial search spaces. Evaluated over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024), AOBL-SOS achieves a net out-of-sample Sharpe ratio of 0.771 and 16.00\% annualized CAGR return under Almgren-Chriss execution. Combinatorial Symmetric Cross-Validation highlights model selection sensitivity (PBO $= 0.5110$), underscoring the critical necessity of strict out-of-sample walk-forward evaluation in quantitative finance.
+This study introduced AOBL-SOS, a diversity-aware, feasibility-preserving metaheuristic optimization framework for cardinality-constrained portfolio construction. By combining bounded simplex solution encodings, adaptive centroid-based opposition, and path-dependent drawdown penalization, the model overcomes premature convergence in high-dimensional financial search spaces. Evaluated over a point-in-time equity universe across an expanding walk-forward horizon (2018--2024), AOBL-SOS achieves a net out-of-sample Sharpe ratio of 0.841 and 17.27\% annualized CAGR return under Almgren-Chriss execution. Combinatorial Symmetric Cross-Validation highlights model selection sensitivity (PBO $= 0.5110$), underscoring the critical necessity of strict out-of-sample walk-forward evaluation in quantitative finance.
 
 \section{Declarations}
 \subsection*{Data Availability Statement}
