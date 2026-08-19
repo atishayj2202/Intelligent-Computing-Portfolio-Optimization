@@ -97,44 +97,42 @@ w_i \le W_{\max}, \quad \forall i \in \{1, \dots, n\}, \quad & \text{(Position E
 \end{align}
 where $\text{SR}(\mathbf{w})$ is the annualized Sharpe ratio, $\text{MDD}(\mathbf{w}) = \min_{t} \left( \frac{V_t - \max_{\tau \le t} V_\tau}{\max_{\tau \le t} V_\tau} \right)$ is the peak-to-trough maximum drawdown of portfolio value $V_t$, and $\lambda \ge 0$ is the drawdown penalty coefficient.
 
-\subsection{Feasibility-Preserving Solution Encoding}
-To guarantee that every candidate vector evaluated during optimization strictly satisfies all constraints without requiring post-hoc repair heuristics, we encode portfolio solutions as a tuple $x = (\mathbf{S}, \boldsymbol{\theta})$:
+\subsection{Feasibility-Preserving Solution Encoding & Mapping}
+To optimize over non-convex portfolio landscapes without post-hoc repair heuristics, candidate allocations are represented as continuous organisms $\mathbf{x} \in \mathbb{R}^n$ over the full cross-sectional asset universe $n$. A two-stage transformation operator $\mathcal{M}: \mathbb{R}^n \to \Delta^{n-1}(W_{\max})$ maps continuous vectors into strictly feasible portfolio allocations:
 \begin{enumerate}
-    \item \textbf{Binary Selection Vector ($\mathbf{S} \in \{0, 1\}^n$):} Identifies the active subset of assets, where $\|\mathbf{S}\|_0 = K$.
-    \item \textbf{Latent Allocation Vector ($\boldsymbol{\theta} \in \mathbb{R}^K$):} Unconstrained continuous variables representing relative allocation intensity among active assets.
+    \item \textbf{Binary Selection & Active Subset Identification:} The $K$ largest components of $\mathbf{x}$ define the binary active asset selection mask $\mathbf{S} \in \{0, 1\}^n$ where $\|\mathbf{S}\|_0 \le K$ (with $K=30$). Unselected assets $i \notin \text{top-}K(\mathbf{x})$ receive weight $w_i = 0$. Because individual position caps ($W_{\max}=20\%$) require at least $\lceil 1/W_{\max} \rceil = 5$ assets to satisfy $\sum w_i = 1$, setting $K=30$ enforces an upper bound while the optimizer selects exactly $K=30$ active assets to maximize risk-adjusted diversification.
+    \item \textbf{Capped Simplex Water-Filling Projection:} The active latent vector $\boldsymbol{\theta} = \mathbf{x}_{\text{top-}K} \in \mathbb{R}^K$ is transformed onto the probability simplex via a softmax mapping:
+    \begin{equation}
+    \tilde{w}_i = \frac{\exp(\theta_i)}{\sum_{j=1}^K \exp(\theta_j)}, \quad i \in \{1, \dots, K\}
+    \end{equation}
+    If any entry exceeds $W_{\max}$, excess weight is iteratively redistributed across uncapped active assets:
+    \begin{equation}
+    w_i^{(k+1)} = \min\left(W_{\max}, \, w_i^{(k)} + \Delta \cdot \frac{w_i^{(k)}}{\sum_{j \notin \mathcal{C}} w_j^{(k)}}\right)
+    \end{equation}
+    where $\mathcal{C} = \{j \mid w_j = W_{\max}\}$ is the set of capped assets and $\Delta = \sum_{j \in \mathcal{C}} (w_j^{(k)} - W_{\max})$ is the excess weight to redistribute. (See Appendix A for formal proof of feasibility preservation).
 \end{enumerate}
 
-The mapping function $\mathcal{M}: \boldsymbol{\theta} \to \mathbf{w}$ transforms latent variables onto the capped probability simplex via a bounded softmax projection:
-\begin{equation}
-\tilde{w}_i = \frac{\exp(\theta_i)}{\sum_{j=1}^K \exp(\theta_j)}, \quad i \in \{1, \dots, K\}
-\end{equation}
-If any element exceeds $W_{\max}$, excess weight is iteratively redistributed across uncapped active assets:
-\begin{equation}
-w_i^{(k+1)} = \min\left(W_{\max}, \, w_i^{(k)} + \Delta \cdot \frac{w_i^{(k)}}{\sum_{j \notin \mathcal{C}} w_j^{(k)}}\right)
-\end{equation}
-where $\mathcal{C} = \{j \mid w_j = W_{\max}\}$ is the set of capped assets and $\Delta = \sum_{j \in \mathcal{C}} (w_j^{(k)} - W_{\max})$ is the excess weight to redistribute. (See Appendix A for proof of feasibility preservation).
-
-\subsection{Symbiotic Organisms Search (SOS)}
-SOS \cite{cheng2014} is a parameter-free metaheuristic that simulates biological interactions among organisms in an ecosystem $\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\}$. Each iteration $t$ executes three sequential phases:
+\subsection{Symbiotic Organisms Search (SOS) on Latent Representation}
+SOS \cite{cheng2014} is a parameter-free metaheuristic that simulates biological interactions among organisms in an ecosystem $\mathbf{X} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\}$ in continuous space $\mathbb{R}^n$. All metaheuristic phase updates (Mutualism, Commensalism, Parasitism) operate directly on continuous decision vectors $\mathbf{x}_i \in \mathbb{R}^n$, providing smooth gradient-free exploration while $\mathcal{M}(\mathbf{x}_i)$ guarantees strict feasibility at every loss evaluation $g(\mathcal{M}(\mathbf{x}_i))$. Each iteration $t$ executes three sequential phases:
 
 \subsubsection{Mutualism Phase}
 Organism $\mathbf{x}_i$ interacts with a randomly selected organism $\mathbf{x}_j$ ($j \neq i$) to enhance mutual fitness relative to the global best organism $\mathbf{x}_{\text{best}}$:
 \begin{align}
 \mathbf{M}_{\text{vector}} &= \frac{\mathbf{x}_i + \mathbf{x}_j}{2} \\
-\mathbf{x}_i^{\text{new}} &= \mathcal{M}\left(\mathbf{x}_i + R_1 \cdot (\mathbf{x}_{\text{best}} - BF_1 \cdot \mathbf{M}_{\text{vector}})\right) \\
-\mathbf{x}_j^{\text{new}} &= \mathcal{M}\left(\mathbf{x}_j + R_2 \cdot (\mathbf{x}_{\text{best}} - BF_2 \cdot \mathbf{M}_{\text{vector}})\right)
+\mathbf{x}_i^{\text{new}} &= \mathbf{x}_i + R_1 \cdot (\mathbf{x}_{\text{best}} - BF_1 \cdot \mathbf{M}_{\text{vector}}) \\
+\mathbf{x}_j^{\text{new}} &= \mathbf{x}_j + R_2 \cdot (\mathbf{x}_{\text{best}} - BF_2 \cdot \mathbf{M}_{\text{vector}})
 \end{align}
-where $R_1, R_2 \sim U(0, 1)$ and $BF_1, BF_2 \in \{1, 2\}$ are benefit factors selected randomly. Updates are accepted if $f(\mathbf{x}^{\text{new}}) < f(\mathbf{x})$.
+where $R_1, R_2 \sim U(0, 1)$ and $BF_1, BF_2 \in \{1, 2\}$ are benefit factors selected randomly. Updates are accepted if loss $g(\mathcal{M}(\mathbf{x}^{\text{new}})) < g(\mathcal{M}(\mathbf{x}))$.
 
 \subsubsection{Commensalism Phase}
 Organism $\mathbf{x}_i$ attempts to derive benefit from $\mathbf{x}_j$ without altering $\mathbf{x}_j$'s fitness:
 \begin{equation}
-\mathbf{x}_i^{\text{new}} = \mathcal{M}\left(\mathbf{x}_i + U(-1, 1) \cdot (\mathbf{x}_{\text{best}} - \mathbf{x}_j)\right)
+\mathbf{x}_i^{\text{new}} = \mathbf{x}_i + U(-1, 1) \cdot (\mathbf{x}_{\text{best}} - \mathbf{x}_j)
 \end{equation}
-accepted if $f(\mathbf{x}_i^{\text{new}}) < f(\mathbf{x}_i)$.
+accepted if $g(\mathcal{M}(\mathbf{x}_i^{\text{new}})) < g(\mathcal{M}(\mathbf{x}_i))$.
 
 \subsubsection{Parasitism Phase}
-A parasite vector $\mathbf{x}_{\text{parasite}}$ is cloned from $\mathbf{x}_i$, mutated along random dimensions, and competes against host $\mathbf{x}_j$. If $f(\mathbf{x}_{\text{parasite}}) < f(\mathbf{x}_j)$, the parasite replaces the host in the ecosystem.
+A parasite vector $\mathbf{x}_{\text{parasite}}$ is cloned from $\mathbf{x}_i$, mutated along random dimensions, and competes against host $\mathbf{x}_j$. If $g(\mathcal{M}(\mathbf{x}_{\text{parasite}})) < g(\mathcal{M}(\mathbf{x}_j))$, the parasite replaces the host in the ecosystem.
 
 \subsection{Centroid-Based Adaptive Opposition Mechanism}
 Standard SOS suffers from diversity decay in high-dimensional financial search spaces. We monitor population diversity at iteration $t$ using pairwise $L_2$ dispersion:
@@ -206,13 +204,13 @@ where $Y = 0.10$ is the market impact scaling parameter, $\sigma_i$ is asset $i$
 AOBL-SOS is benchmarked against eight competing models under identical computational budgets (40 population size, 150 iterations = 6,000 evaluations per seed):
 \begin{itemize}
     \item \textbf{Metaheuristic Solvers:} Standard SOS \cite{cheng2014}, Genetic Algorithm (GA) \cite{holland1992}, Particle Swarm Optimization (PSO) \cite{kennedy1995}, and Differential Evolution (DE) \cite{storn1997}.
-    \item \textbf{Analytical & Convex Solvers:} Ledoit-Wolf Shrinkage Covariance \cite{ledoit2004}, Markowitz Maximum Sharpe Ratio \cite{markowitz1952}, Minimum Variance, and Equally Weighted $1/N$ \cite{demiguel2009}.
+    \item \textbf{Analytical \& Convex Solvers:} Ledoit-Wolf Shrinkage Covariance \cite{ledoit2004}, Markowitz Maximum Sharpe Ratio \cite{markowitz1952}, Minimum Variance, and Equally Weighted $1/N$ \cite{demiguel2009}.
 \end{itemize}
 
 \section{Empirical Results and Analysis}
 
 \subsection{Main Walk-Forward Out-of-Sample Performance}
-Table \ref{tab:master_wf} presents the continuous 2018--2024 chained out-of-sample performance across all nine algorithms under Almgren-Chriss market impact execution ($AUM = \$100\text{M}$) over the point-in-time investable universe.
+Table \ref{tab:master_wf} presents the continuous 2018--2024 chained out-of-sample performance across all nine algorithms under standard 10 bps rebalancing friction over the point-in-time investable universe. (Section \ref{sec:aum_capacity} explicitly evaluates the additional market impact penalty under a large-scale $AUM = \$100\text{M}$ Almgren-Chriss non-linear execution model, where net Sharpe adjusts slightly to 0.827).
 
 \begin{table}[htbp]
 \centering
@@ -235,7 +233,18 @@ Min Variance & 0.491 & 7.93\% & 16.15\% & --31.89\% & 0.249 \\
 \end{tabular}
 \end{table}
 
-AOBL-SOS achieves the highest net Sharpe ratio (0.841) and annualized CAGR (17.27\%) under strict walk-forward evaluation. Significantly, AOBL-SOS achieves both higher CAGR return (17.27\% vs 15.61\%) and lower maximum drawdown (--31.97\% vs --36.09\%) compared to the standard SOS baseline, confirming that adaptive centroid opposition successfully prevents trajectory collapse under nonstationary market regimes.
+AOBL-SOS achieves the highest point-estimate net Sharpe ratio (0.841) and annualized CAGR (17.27\%) under strict walk-forward evaluation. Significantly, AOBL-SOS achieves both higher CAGR return (17.27\% vs 15.61\%) and lower maximum drawdown (--31.97\% vs --36.09\%) compared to the standard SOS baseline, confirming that adaptive centroid opposition successfully prevents trajectory collapse under nonstationary market regimes.
+
+\subsection{Pairwise Sharpe Comparison (Jobson-Korkie / Memmel Test)}
+To evaluate pairwise Sharpe ratio differences against competing baseline solvers, we execute the Jobson-Korkie hypothesis test with Memmel's (2003) asymptotic variance correction on daily out-of-sample returns:
+\begin{itemize}
+    \item vs. SOS (Ablation Baseline): $Z = 0.824, \, p = 0.410$
+    \item vs. Particle Swarm (PSO): $Z = 0.812, \, p = 0.417$
+    \item vs. Genetic Algorithm (GA): $Z = 0.865, \, p = 0.387$
+    \item vs. Ledoit-Wolf Shrinkage: $Z = 1.082, \, p = 0.279$
+    \item vs. Equal Weight ($1/N$): $Z = 1.250, \, p = 0.211$
+\end{itemize}
+While AOBL-SOS maintains the highest point-estimate Sharpe ratio (0.841 vs 0.733 for baseline SOS), the Memmel $p$-values ($p > 0.05$) indicate that the pairwise Sharpe outperformance over competing metaheuristics is not statistically significant at conventional confidence levels under daily return variance. Rather, the empirical value of AOBL-SOS lies in providing consistent, feasibility-preserving optimization with reduced drawdown severity across nonstationary horizons.
 
 \begin{figure}[!ht]
 \centering
@@ -288,10 +297,6 @@ To evaluate the statistical robustness of Sharpe ratio differences, we execute t
     \item vs. Particle Swarm (PSO): $Z = 0.812, \, p = 0.417$
     \item vs. Genetic Algorithm (GA): $Z = 0.865, \, p = 0.387$
     \item vs. Ledoit-Wolf Shrinkage: $Z = 1.082, \, p = 0.279$
-    \item vs. Equal Weight ($1/N$): $Z = 1.250, \, p = 0.211$
-\end{itemize}
-While AOBL-SOS maintains the highest point-estimate Sharpe ratio (0.841), the Memmel test indicates that outperformance relative to baseline metaheuristics reflects moderate risk-adjusted gains under daily return variance.
-
 \subsection{Statistical Overfitting Validation (DSR, PSR, CSCV)}
 To evaluate model selection risk and control for multiple testing bias across hyperparameter explorations, we execute Deflated Sharpe Ratio (DSR) and Combinatorial Symmetric Cross-Validation (CSCV) analysis across a candidate strategy grid comprising 25 hyperparameter configurations ($\lambda_{\text{dd}} \in \{0.0, 0.5, 1.0, 1.5, 2.0\}$, $K \in \{15, 20, 25, 30, 35\}$) over $S=16$ partitions (12,870 combinations).
 
@@ -313,7 +318,7 @@ Mean Jaccard Overlap & \textbf{0.2689} \\
 \end{tabular}
 \end{table}
 
-As detailed in Table \ref{tab:overfitting}, the Probabilistic Sharpe Ratio ($\text{PSR} = 1.0000$) confirms $100\%$ statistical confidence that realized out-of-sample Sharpe exceeds zero. Under the Bailey \& López de Prado (2014) framework, accounting for cross-strategy Sharpe variance across the hyperparameter grid yields an implied Hurdle Sharpe ratio of $SR_0 = 0.1951$. Realized out-of-sample net Sharpe ($0.841$) substantially exceeds this hurdle, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.9522$ ($95.22\%$ statistical confidence). This confirms that out-of-sample performance is highly statistically significant after adjusting for trial inflation. The CSCV rank-reversal metric ($\text{PBO} = 0.6998$) reflects intra-grid rank variability across a uniformly high-performing hyperparameter grid rather than out-of-sample performance failure.
+As detailed in Table \ref{tab:overfitting}, the statistical evaluation provides a nuanced view of hyperparameter selection risk. Under the Bailey \& López de Prado (2014) framework, accounting for cross-strategy Sharpe variance across the candidate hyperparameter grid yields an implied Hurdle Sharpe ratio of $SR_0 = 0.1951$. Realized out-of-sample net Sharpe ($0.841$) substantially exceeds this hurdle, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.9522$ ($95.22\%$ statistical confidence), confirming that out-of-sample risk-adjusted performance remains non-spurious after accounting for trial inflation. Concurrently, the CSCV metric ($\text{PBO} = 0.6998$) indicates a $69.98\%$ probability of rank-reversal across symmetric sub-period splits within the hyperparameter grid, highlighting that fine-tuning intra-grid parameters carries non-negligible selection risk that researchers must navigate carefully.
 
 \subsection{Carhart Multi-Factor Risk Attribution}
 Table \ref{tab:factor_reg} details the Carhart 4-factor linear regression (MKT, SMB, HML, MOM) with Newey-West / HAC robust standard errors ($maxlags=5$) of AOBL-SOS out-of-sample returns.
@@ -378,7 +383,7 @@ Figure \ref{fig:aum_capacity} evaluates strategy capacity under scaling AUM ($10
 Across 20 independent random execution seeds, AOBL-SOS achieves a Weight Stability index $WS = 0.9567$ and a mean pairwise Jaccard overlap of $J = 0.2689$ across active selection sets $\mathbf{S}$. Top consistently selected assets include Northrop Grumman (NOC), O'Reilly Automotive (ORLY), Regeneron Pharmaceuticals (REGN), Tesla (TSLA), and Netflix (NFLX).
 
 \subsection{Convergence \& Diversity Dynamics}
-Figure \ref{fig:diversity} illustrates fitness convergence and population diversity $D_t$ over 150 iterations. While standard SOS exhibits rapid diversity collapse during search, AOBL-SOS triggers adaptive centroid opposition upon stagnation, restoring diversity ($D_t > 0.15$) and escaping local risk traps.
+Figure \ref{fig:diversity} illustrates fitness convergence and population diversity $D_t$ over 150 iterations. While standard SOS exhibits rapid diversity collapse during search, AOBL-SOS triggers adaptive centroid opposition upon stagnation, maintaining population diversity ($D_t > 0.05$) and escaping local risk traps.
 
 \begin{figure}[htbp]
 \centering
@@ -403,7 +408,7 @@ Replication code and data pipelines are available at \url{https://github.com/ati
 \appendix
 \section{Proof of Simplex Preservation under Bounded Mapping}
 \begin{proposition}
-Let $x = (\mathbf{S}, \boldsymbol{\theta})$ be a candidate solution where $\mathbf{S} \in \{0,1\}^n$ with $\|\mathbf{S}\|_0 = K$ and $\boldsymbol{\theta} \in \mathbb{R}^K$. The transformation $\mathcal{M}(\boldsymbol{\theta})$ preserves strict feasibility on the capped simplex $\Delta^{n-1}(W_{\max}) = \{\mathbf{w} \in \mathbb{R}^n \mid \sum w_i = 1, \, 0 \le w_i \le W_{\max}, \, \|\mathbf{w}\|_0 \le K\}$.
+Let $x = (\mathbf{S}, \boldsymbol{\theta})$ be a candidate solution where $\mathbf{S} \in \{0,1\}^n$ with $\|\mathbf{S}\|_0 \le K$ and $\boldsymbol{\theta} \in \mathbb{R}^K$. The transformation $\mathcal{M}(\boldsymbol{\theta})$ preserves strict feasibility on the capped simplex $\Delta^{n-1}(W_{\max}) = \{\mathbf{w} \in \mathbb{R}^n \mid \sum w_i = 1, \, 0 \le w_i \le W_{\max}, \, \|\mathbf{w}\|_0 \le K\}$.
 \end{proposition}
 
 \begin{proof_prop}
@@ -416,16 +421,16 @@ The initial softmax mapping yields positive weights $\tilde{w}_i > 0$ summing to
 \caption{AOBL-SOS Institutional Portfolio Optimization}\label{alg:aobl_sos}
 \begin{algorithmic}[1]
 \Require Matrix $\mathbf{R}$, Cardinality $K=30$, Cap $W_{\max}=0.20$, Patience $\tau=15$
-\State Initialize population $\mathbf{X} = \{\mathbf{x}_1, \dots, \mathbf{x}_N\}$ via $\mathcal{M}(\boldsymbol{\theta})$
-\State Evaluate fitness $f(\mathbf{x}_i) = \text{SR}(\mathbf{x}_i) - \lambda |\text{MDD}(\mathbf{x}_i)|$
+\State Initialize population $\mathbf{X} = \{\mathbf{x}_1, \dots, \mathbf{x}_N\}$
+\State Evaluate loss function $g(\mathcal{M}(\mathbf{x}_i)) = -\text{SR}(\mathcal{M}(\mathbf{x}_i)) + \lambda |\text{MDD}(\mathcal{M}(\mathbf{x}_i))|$
 \State $t \gets 0, \, S_t \gets 0$
 \While{$t < T_{\max}$}
-    \State $\mathbf{x}_{\text{best}} \gets \arg\min_{\mathbf{x}} f(\mathbf{x})$
+    \State $\mathbf{x}_{\text{best}} \gets \arg\min_{\mathbf{x}} g(\mathcal{M}(\mathbf{x}))$
     \For{$i = 1$ to $N$}
         \State Perform Mutualism, Commensalism, and Parasitism steps
     \EndFor
     \State Track diversity $D_t = \frac{2}{N(N-1)} \sum_{i < j} \|\mathbf{x}_i - \mathbf{x}_j\|_2$
-    \If{$f(\mathbf{x}_{\text{best}})^{(t)} < f(\mathbf{x}_{\text{best}})^{(t-1)} - \epsilon$}
+    \If{$g(\mathcal{M}(\mathbf{x}_{\text{best}}))^{(t)} < g(\mathcal{M}(\mathbf{x}_{\text{best}}))^{(t-1)} - \epsilon$}
         \State $S_t \gets 0$
     \Else
         \State $S_t \gets S_t + 1$
@@ -433,7 +438,7 @@ The initial softmax mapping yields positive weights $\tilde{w}_i > 0$ summing to
     \If{$S_t \ge \tau$}
         \State Compute population centroid $\mathbf{c} = \frac{1}{N}\sum \mathbf{x}_i$
         \State Generate opposite vectors $\mathbf{x}_{i, \, \text{opp}} = \mathbf{c} + \gamma(\mathbf{c} - \mathbf{x}_i)$ for worst 50\%
-        \State Replace hosts if $f(\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})) < f(\mathbf{x}_i)$
+        \State Replace hosts if $g(\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})) < g(\mathcal{M}(\mathbf{x}_i))$
         \State $S_t \gets \lfloor \tau / 2 \rfloor$
     \EndIf
 \EndWhile
