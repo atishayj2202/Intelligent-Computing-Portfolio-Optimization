@@ -1,0 +1,22 @@
+QF submission notes
+
+Keywords:
+Portfolio Optimization; Cardinality Constraints; Adaptive Opposition-Based Learning; Symbiotic Organisms Search; Almgren-Chriss Execution; Walk-Forward Analysis; Backtest Overfitting.
+
+Highlights:
+- AOBL-SOS is the proposed optimizer.
+- Main evaluation uses the chained 2018--2024 out-of-sample CSV results.
+- Keep manuscript claims aligned only with CSV-backed values.
+- Do not cite deprecated TXT summaries; use CSVs as the source of truth.
+
+Paper consistency notes:
+- paper.tex and any updated paper draft should match the CSV metrics exactly.
+- Ensure Sharpe, CAGR, drawdown, stability, and significance values are copied from the CSV source files only.
+
+Citation update map:
+- {bailey2014, deprado2014} -> a newer backtest-overfitting / walk-forward validation paper if you want a recent citation anchor.
+- {tizhoosh2005, rahnamayan2008} -> a recent opposition-based learning or diversity-preserving metaheuristics review/paper.
+- {roll1984, hasbrouck2009} -> a recent transaction-cost / market-impact paper.
+- {michaud1989, black1992} -> a recent portfolio-construction review covering estimation error / constraints.
+- {harvey2016, prado2018} -> a recent multiple-testing / financial ML validation reference.
+
