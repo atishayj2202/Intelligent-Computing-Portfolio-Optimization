@@ -1,7 +1,0 @@
-Ablation Variant,Walk-Forward Horizon,Net Sharpe,Net Ann Return,Max Drawdown,Calmar Ratio
-Variant A (Base SOS - No Drawdown Penalty),2018-2024 (Chained OOS),0.825,18.73%,-34.18%,0.548
-Variant B (SOS + Drawdown Penalty),2018-2024 (Chained OOS),0.863,18.37%,-33.09%,0.555
-Variant C (SOS + Random Restarts),2018-2024 (Chained OOS),0.863,18.37%,-33.09%,0.555
-Variant D (SOS + Static Opposition),2018-2024 (Chained OOS),0.887,18.96%,-33.39%,0.568
-Variant E (SOS + Fixed Reflection Opposition),2018-2024 (Chained OOS),0.863,18.37%,-33.09%,0.555
-Variant F (Full AOBL-SOS Proposed),2018-2024 (Chained OOS),0.919,19.55%,-31.75%,0.616

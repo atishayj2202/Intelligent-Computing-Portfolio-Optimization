@@ -15,4 +15,4 @@ manuscript/new_paper.tex
 manuscript/deprecated_paper.tex
 *.txt
 manuscript/*.txt
-!manuscript/qf_submission_items.txt
+!submission.txt
