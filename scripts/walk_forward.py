@@ -9,7 +9,7 @@ from scripts.universe import get_walk_forward_windows
 from scripts.utils import set_seed, normalize_cap_cardinality, load_data_for_window, population_diversity
 from scripts.algorithms import AOBL_SOS, SOS
 from scripts.metaheuristics import run_ga, run_pso, run_de
-from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss
+from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_fixed_bps, summarize_chained_returns
 
 def jobson_korkie_memmel(ret1, ret2):
     """
@@ -111,6 +111,8 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
     
     window_results = []
     chained_returns = {alg: [] for alg in algorithm_names}
+    chained_dates = []
+    selected_weight_rows = []
     
     for win in windows:
         print(f"\n--- Walk-Forward Window {win['window_id']}: Train ({win['train_start']} to {win['train_end']}) -> Test ({win['test_year']}) ---")
@@ -162,21 +164,38 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
         algo_weights["Min Variance"] = [w_minvar]
         algo_weights["Equal Weight (1/N)"] = [w_eq]
         
-        # Evaluate OOS metrics for each algorithm in this window
+        # Five stochastic seeds per window; chain the median-ranked OOS seed path.
+        # Headline economics: 10 bps at annual formation only.
+        window_dates = list(test_ret.index)
         for alg in algorithm_names:
             weights_list = algo_weights[alg]
-            metrics_list = [compute_net_metrics_almgren_chriss(w, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual) for w in weights_list]
-            
-            # Median seed selection for continuous return chaining
+            metrics_list = [
+                compute_net_metrics_fixed_bps(
+                    w, test_ret, cost_bps=10, rebal_freq=None, rf_annual=rf_annual
+                )
+                for w in weights_list
+            ]
             median_idx = int(np.argsort([m['sharpe'] for m in metrics_list])[len(metrics_list)//2])
+            selected_w = weights_list[median_idx]
             best_metrics = metrics_list[median_idx]
-            
+
             chained_returns[alg].extend(best_metrics['net_returns'])
-            
+            if alg == algorithm_names[0]:
+                chained_dates.extend(window_dates)
+            for ticker, wt in zip(tickers, selected_w):
+                selected_weight_rows.append({
+                    'Window': win['window_id'],
+                    'Test Year': win['test_year'],
+                    'Algorithm': alg,
+                    'Ticker': ticker,
+                    'Weight': float(wt),
+                })
+
             window_results.append({
                 'Window': win['window_id'],
                 'Test Year': win['test_year'],
                 'Algorithm': alg,
+                'Selected OOS Sharpe': f"{best_metrics['sharpe']:.3f}",
                 'Net Sharpe': f"{np.median([m['sharpe'] for m in metrics_list]):.3f}",
                 'Net Ann Return': f"{np.median([m['ann_return'] for m in metrics_list])*100:.2f}%",
                 'Max Drawdown': f"{np.median([m['max_drawdown'] for m in metrics_list])*100:.2f}%"
@@ -217,7 +236,15 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
     
     # Generate Figure 1: Cumulative Returns and Drawdowns across 2018-2024
     import matplotlib.pyplot as plt
-    dates = pd.date_range(start="2018-01-01", periods=len(chained_returns["AOBL-SOS (Proposed)"]), freq="B")
+    pd.DataFrame(selected_weight_rows).to_csv(os.path.join(output_dir, "selected_weights.csv"), index=False)
+    n_oos = len(chained_returns["AOBL-SOS (Proposed)"])
+    if len(chained_dates) != n_oos:
+        raise RuntimeError(f"Date length {len(chained_dates)} != return length {n_oos}")
+    daily_df = pd.DataFrame({'Date': pd.to_datetime(chained_dates)})
+    for alg in algorithm_names:
+        daily_df[alg] = np.asarray(chained_returns[alg], dtype=float)
+    daily_df.to_csv(os.path.join(output_dir, "chained_daily_returns.csv"), index=False)
+    dates = pd.to_datetime(chained_dates)
     
     plt.figure(figsize=(10, 4.5))
     for alg, color, ls in [("AOBL-SOS (Proposed)", "#D85A30", "-"), ("SOS (Baseline)", "steelblue", "--"), ("Equal Weight (1/N)", "gray", ":")]:

@@ -1,3 +1,0 @@
-Weight Stability (WS): 0.9620
-Mean Jaccard Overlap: 0.2825
-Top 5 Consistently Selected Assets: CHTR, HD, NOC, NVDA, NFLX

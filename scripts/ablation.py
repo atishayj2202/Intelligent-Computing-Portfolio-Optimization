@@ -6,7 +6,7 @@ import pandas as pd
 from scripts.universe import get_walk_forward_windows
 from scripts.utils import set_seed, normalize_cap_cardinality, load_data_for_window
 from scripts.algorithms import SOS, AOBL_SOS, mutualism_step, commensalism_step, parasitism_step, centroid_opposition
-from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss
+from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_fixed_bps
 
 def run_ablation_variant_single(variant_name: str, train_ret: np.ndarray, pop: np.ndarray, map_func, iters: int = 150, cap: float = 0.20, K: int = 30, rf_annual: float = 0.02):
     """
@@ -129,9 +129,11 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5,
                 _, w_var, _ = run_ablation_variant_single(
                     var_name, train_ret.values, pop, map_func, iters=iters, cap=cap, K=K, rf_annual=rf_annual
                 )
-                res = compute_net_metrics_almgren_chriss(w_var, test_ret, test_vol, train_ret, aum=aum, rf_annual=rf_annual)
+                res = compute_net_metrics_fixed_bps(
+                    w_var, test_ret, cost_bps=10, rebal_freq=None, rf_annual=rf_annual
+                )
                 metrics_list.append(res)
-                
+
             median_idx = int(np.argsort([m['sharpe'] for m in metrics_list])[len(metrics_list)//2])
             best_res = metrics_list[median_idx]
             chained_variant_returns[var_name].extend(best_res['net_returns'])

@@ -80,9 +80,10 @@ def load_data_for_window(filepath: str, train_start: str, train_end: str, test_s
     test_ret = df_ret.loc[test_start:test_end, eligible_tickers]
     test_vol = df_vol.loc[test_start:test_end, eligible_tickers]
     
-    # Clean any remaining NaNs in train by forward fill then 0
+    # In-sample: carry last observed return for estimation only.
+    # Out-of-sample: missing returns are zero (no repeated P&L after a name goes missing).
     train_ret = train_ret.ffill().fillna(0.0)
-    test_ret = test_ret.ffill().fillna(0.0)
+    test_ret = test_ret.fillna(0.0)
     test_vol = test_vol.ffill().fillna(0.0)
     
     mu = train_ret.mean().values * 252

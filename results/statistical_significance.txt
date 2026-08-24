@@ -1,7 +1,0 @@
-Jobson-Korkie (Memmel) Robust Sharpe Difference Tests:
-AOBL-SOS Sharpe: 0.962
-vs SOS (Ablation) - Z: 0.796, P-Value: 0.42589
-vs PSO - Z: 0.735, P-Value: 0.46252
-vs GA - Z: 0.819, P-Value: 0.41305
-vs Ledoit-Wolf - Z: 1.157, P-Value: 0.24717
-vs Equal Weight (1/N) - Z: 0.771, P-Value: 0.44075

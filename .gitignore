@@ -7,3 +7,11 @@ __pycache__/
 .idea/
 *.swp
 *.swo
+.mplconfig/
+*.log
+*.pid
+scratch/
+manuscript/new_paper.tex
+manuscript/deprecated_paper.tex
+*.txt
+manuscript/*.txt

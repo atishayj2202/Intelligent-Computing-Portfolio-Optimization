@@ -173,9 +173,10 @@ def run_portfolio_stability(weight_seeds_list, tickers, output_dir="results"):
     selected_masks = weights > 0.001
     selection_prob = np.mean(selected_masks, axis=0)
     
-    # 2. Weight Stability: WS = 1 - sum(Var(w_i)) clipped to [0, 1]
-    weight_vars = np.var(weights, axis=0)
-    ws = float(np.clip(1.0 - np.sum(weight_vars), 0.0, 1.0))
+    # 2. Weight Stability: WS = 1 - (1/M) sum_m ||w^(m) - wbar||_1
+    wbar = np.mean(weights, axis=0)
+    l1_devs = np.sum(np.abs(weights - wbar), axis=1)
+    ws = float(np.clip(1.0 - np.mean(l1_devs), 0.0, 1.0))
     
     # 3. Pairwise Jaccard Similarity across active asset sets S
     jaccards = []
@@ -196,8 +197,6 @@ def run_portfolio_stability(weight_seeds_list, tickers, output_dir="results"):
         'Top 5 Consistently Selected Assets': ", ".join([tickers[idx] for idx in np.argsort(selection_prob)[-5:]])
     }
     
-    with open(os.path.join(output_dir, "portfolio_stability.txt"), "w") as f:
-        for k, v in stability_metrics.items():
-            f.write(f"{k}: {v}\n")
+    pd.DataFrame([stability_metrics]).to_csv(os.path.join(output_dir, "portfolio_stability.csv"), index=False)
             
     return stability_metrics
