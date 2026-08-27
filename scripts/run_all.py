@@ -19,7 +19,13 @@ from scripts.analysis import (
     run_vix_regime_analysis, 
     run_portfolio_stability
 )
-from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss
+from scripts.evaluation import obj_sharpe_drawdown, compute_net_metrics_almgren_chriss, compute_net_metrics_fixed_bps
+from scripts.diagnostics import (
+    run_carhart_attribution,
+    stationary_block_bootstrap_delta_sharpe,
+    run_cost_sensitivity,
+    run_capacity_from_weights,
+)
 
 def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     os.makedirs(output_dir, exist_ok=True)
@@ -54,14 +60,15 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     _, _, z_lw, p_lw = jobson_korkie_memmel(aobl_rets, lw_rets)
     _, _, z_eq, p_eq = jobson_korkie_memmel(aobl_rets, eq_rets)
     
-    with open(os.path.join(output_dir, "statistical_significance.txt"), "w") as f:
-        f.write("Jobson-Korkie (Memmel) Robust Sharpe Difference Tests:\n")
-        f.write(f"AOBL-SOS Sharpe: {sh1*np.sqrt(252):.3f}\n")
-        f.write(f"vs SOS (Ablation) - Z: {z_sos:.3f}, P-Value: {p_sos:.5f}\n")
-        f.write(f"vs PSO - Z: {z_pso:.3f}, P-Value: {p_pso:.5f}\n")
-        f.write(f"vs GA - Z: {z_ga:.3f}, P-Value: {p_ga:.5f}\n")
-        f.write(f"vs Ledoit-Wolf - Z: {z_lw:.3f}, P-Value: {p_lw:.5f}\n")
-        f.write(f"vs Equal Weight (1/N) - Z: {z_eq:.3f}, P-Value: {p_eq:.5f}\n")
+    pd.DataFrame([
+        {"Comparison": "vs SOS", "Z": z_sos, "p_value": p_sos},
+        {"Comparison": "vs PSO", "Z": z_pso, "p_value": p_pso},
+        {"Comparison": "vs GA", "Z": z_ga, "p_value": p_ga},
+        {"Comparison": "vs Ledoit-Wolf", "Z": z_lw, "p_value": p_lw},
+        {"Comparison": "vs Equal Weight (1/N)", "Z": z_eq, "p_value": p_eq},
+    ]).to_csv(os.path.join(output_dir, "statistical_significance.csv"), index=False)
+    boot = stationary_block_bootstrap_delta_sharpe(aobl_rets, sos_rets, block_mean=21, n_boot=2000, rf_annual=0.02)
+    pd.DataFrame([boot]).to_csv(os.path.join(output_dir, "block_bootstrap_delta_sharpe.csv"), index=False)
     
     # ---------------------------------------------------------
     # 2. Walk-Forward 7-Variant Ablation Study
@@ -97,7 +104,7 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
                 pop = np.array([map_func(p) for p in pop])
                 
                 _, w_cand, _ = AOBL_SOS(obj_func, pop, map_func, iters=100, is_portfolio=True, cap=0.20, K=k_val)
-                res = compute_net_metrics_almgren_chriss(w_cand, test_ret, test_vol, train_ret, aum=100_000_000)
+                res = compute_net_metrics_fixed_bps(w_cand, test_ret, cost_bps=10, rebal_freq=None, rf_annual=0.02)
                 cand_chained.extend(res['net_returns'])
                 
             rets_arr = np.array(cand_chained)
@@ -124,28 +131,32 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     psr_val = compute_psr(realized_sr, 0.0, n_samples=n_days, skewness=skew, kurtosis=kurt)
     min_btl = compute_min_btl(realized_sr, bench_sr, skewness=skew, kurtosis=kurt)
     
-    with open(os.path.join(output_dir, "pbo_dsr_results.txt"), "w") as f:
-        f.write(f"Probability of Backtest Overfitting (PBO): {pbo:.4f}\n")
-        f.write(f"Deflated Sharpe Ratio (DSR): {dsr_val:.4f}\n")
-        f.write(f"Probabilistic Sharpe Ratio (PSR): {psr_val:.4f}\n")
-        f.write(f"Implied Hurdle Sharpe (SR0): {bench_sr:.4f}\n")
-        f.write(f"Minimum Backtest Length (MinBTL): {min_btl:.2f} years\n" if not np.isnan(min_btl) else f"Minimum Backtest Length (MinBTL): N/A\n")
+    pd.DataFrame([{
+        "PBO": pbo,
+        "DSR": dsr_val,
+        "PSR": psr_val,
+        "SR0": bench_sr,
+        "MinBTL_years": (np.nan if np.isnan(min_btl) else min_btl),
+        "Grid": "lambda x K = 5 x 5",
+        "Headline_iters": 150,
+        "PBO_grid_iters": 100,
+        "PBO_grid_pop": 40,
+        "PBO_cost_model": "10bps_annual_formation",
+    }]).to_csv(os.path.join(output_dir, "pbo_dsr_results.csv"), index=False)
+    pd.DataFrame({"lambda": np.repeat(lambda_grid, len(k_grid)), "K": np.tile(k_grid, len(lambda_grid)), "OOS_Sharpe": grid_annual_sharpes}).to_csv(os.path.join(output_dir, "pbo_grid_sharpes.csv"), index=False)
         
     # ---------------------------------------------------------
     # 4. Factor Attribution & VIX Regime Analysis
     # ---------------------------------------------------------
-    print("\n[4/7] Running Real Fama-French Factor Attribution & Real Volatility Regime Analysis...")
+    print("\n[4/7] Running Ken French/Carhart attribution and volatility-regime analysis...")
+    daily = pd.read_csv(os.path.join(output_dir, "chained_daily_returns.csv"), parse_dates=["Date"])
+    aobl_dates_series = daily.set_index("Date")["AOBL-SOS (Proposed)"]
+    run_carhart_attribution(aobl_dates_series, output_dir=output_dir)
+    df_regime = run_vix_regime_analysis(aobl_dates_series, data_path=data_path, output_dir=output_dir)
+    # keep train_ret for the diversity plot below
     tickers, mu, cov, train_ret, test_ret, test_vol = load_data_for_window(
         data_path, '2012-01-01', '2017-12-31', '2018-01-01', '2024-12-31'
     )
-    aobl_dates_series = pd.Series(aobl_rets, index=test_ret.index[:len(aobl_rets)])
-    factor_loadings = run_factor_attribution(aobl_dates_series, data_path=data_path)
-    
-    with open(os.path.join(output_dir, "fama_french_attribution.txt"), "w") as f:
-        for k, v in factor_loadings.items():
-            f.write(f"{k}: {v}\n")
-            
-    df_regime = run_vix_regime_analysis(aobl_dates_series, data_path=data_path, output_dir=output_dir)
     
     # ---------------------------------------------------------
     # 5. AUM Capacity & Portfolio Stability
@@ -159,8 +170,9 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     pop = np.random.uniform(0, 1, (40, dim))
     pop = np.array([map_func(p) for p in pop])
     _, w_best, _ = AOBL_SOS(obj_dd, pop, map_func, iters=150, is_portfolio=True)
-    
-    df_capacity = run_aum_capacity_analysis(aobl_dates_series, output_dir=output_dir)
+    weights_csv = os.path.join(output_dir, "selected_weights.csv")
+    df_capacity = run_capacity_from_weights(weights_csv, data_path, output_dir=output_dir)
+    run_cost_sensitivity(weights_csv, data_path, output_dir=output_dir)
     
     seed_weights = []
     for s in range(20):
@@ -213,7 +225,7 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     for item in os.listdir(output_dir):
         s = os.path.join(output_dir, item)
         d = os.path.join(manuscript_dir, item)
-        if os.path.isfile(s):
+        if os.path.isfile(s) and item.endswith((".csv", ".png")):
             shutil.copy2(s, d)
             
     print("\n" + "=" * 70)

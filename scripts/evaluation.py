@@ -22,19 +22,17 @@ def obj_sharpe_drawdown(w, train_ret, rf_annual=0.0, lambda_dd=1.0):
     # Loss g(w) to MINIMIZE:
     return -sharpe + penalty
 
-def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf_annual=0.0):
+def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=None, rf_annual=0.0):
+    """Net OOS path. Costs are charged at formation. Intra-year restores run only if rebal_freq is set."""
     returns = test_ret_df.values
     n_days, n_assets = returns.shape
     
     port_val = 1.0
     val_history = []
-    
     current_w = np.copy(w)
-    shares = (port_val * current_w) 
-    
-    # Initial cost
     trade_cost = np.sum(np.abs(current_w)) * (cost_bps / 10000.0)
     port_val -= trade_cost
+    shares = port_val * current_w
     
     turnovers = []
     
@@ -43,7 +41,7 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
         shares = shares * (1 + day_ret)
         port_val = np.sum(shares)
         
-        if (t + 1) % rebal_freq == 0 and t < n_days - 1:
+        if rebal_freq is not None and (t + 1) % rebal_freq == 0 and t < n_days - 1:
             target_holdings = port_val * w
             trades = np.abs(target_holdings - shares)
             cost = np.sum(trades) * (cost_bps / 10000.0)
@@ -87,7 +85,7 @@ def compute_net_metrics_fixed_bps(w, test_ret_df, cost_bps=10, rebal_freq=21, rf
         'net_returns': net_returns
     }
 
-def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=21, rf_annual=0.02, Y=0.10):
+def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df, aum=100_000_000, rebal_freq=None, rf_annual=0.02, Y=0.10):
     returns = test_ret_df.values
     adv_dollars = test_vol_df.values
     
@@ -122,7 +120,7 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
         shares_val = shares_val * (1 + day_ret)
         port_val = np.sum(shares_val)
         
-        if (t + 1) % rebal_freq == 0 and t < n_days - 1:
+        if rebal_freq is not None and (t + 1) % rebal_freq == 0 and t < n_days - 1:
             target_val = port_val * w
             trades = np.abs(target_val - shares_val)
             
@@ -165,4 +163,26 @@ def compute_net_metrics_almgren_chriss(w, test_ret_df, test_vol_df, train_ret_df
         'calmar': calmar,
         'cvar_95': cvar_95,
         'net_returns': net_returns
+    }
+
+
+def summarize_chained_returns(net_returns, rf_annual=0.02):
+    rets = np.asarray(net_returns, dtype=float)
+    n = len(rets)
+    total_growth = np.prod(1.0 + rets)
+    cagr = (total_growth ** (252.0 / n)) - 1.0 if total_growth > 0 else -1.0
+    ann_r = cagr - rf_annual
+    ann_v = np.std(rets, ddof=1) * np.sqrt(252) + 1e-12
+    sharpe = ann_r / ann_v
+    cum = np.cumprod(1.0 + rets)
+    running_max = np.maximum.accumulate(cum)
+    max_dd = np.min((cum - running_max) / running_max)
+    calmar = ann_r / abs(max_dd) if max_dd < 0 else np.nan
+    return {
+        'ann_return': ann_r,
+        'ann_vol': ann_v,
+        'sharpe': sharpe,
+        'max_drawdown': max_dd,
+        'calmar': calmar,
+        'n_days': n,
     }

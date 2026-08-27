@@ -1,0 +1,54 @@
+Quantitative Finance submission items
+====================================
+
+Title
+Institutional Portfolio Construction under Cardinality Friction:
+An Adaptive Diversity-Preserving Walk-Forward Study
+
+Corresponding author
+Atishaya Jain, Department of Computer Science and Engineering,
+Netaji Subhas University of Technology (NSUT), New Delhi, India
+atishaya.jain.ug23@nsut.ac.in
+
+Keywords
+cardinality-constrained portfolio optimization; walk-forward evaluation;
+market impact; model-selection risk; adaptive diversity preservation;
+Carhart attribution; implementation shortfall
+
+JEL Codes
+C61; G11; C63; G17
+
+Highlights
+1. Adaptive diversity preservation is formulated as an institutional MINLP
+   portfolio construction engine enforcing exact cardinality (K=30) and
+   position caps (W_max=20%) without post-hoc repair heuristics.
+2. Expanding point-in-time walk-forward tests (2018-2024) across seven OOS
+   windows eliminate survivorship bias; locked annual weights hold with intra-year drift.
+3. AOBL-SOS delivers superior out-of-sample risk-adjusted performance
+   (chained Sharpe 0.919, net CAGR 19.55%, Calmar 0.616) over baseline metaheuristics
+   (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks (Ledoit-Wolf 0.713, 1/N 0.700).
+4. Ken French/Carhart attribution confirms statistically significant selection alpha
+   (alpha = 6.53%, t=2.01, p=0.045) with R^2 = 0.831; the 2022 drawdown reflects
+   macro interest rate tightening market beta and growth factor transmission.
+5. Multiple-testing validation yields low Probability of Backtest Overfitting
+   (PBO = 0.427) and DSR = 0.956; Almgren-Chriss capacity scaling shows minimal
+   shortfall (0.15 pp CAGR drag at $5B AUM).
+
+Declarations
+Funding: None.
+Competing interests: None.
+Ethics: Not applicable (public market data only).
+Author contributions: All authors contributed to design, implementation,
+   and writing; Atishaya Jain is corresponding author.
+Data availability: Replication code and equity panel data are at
+   https://github.com/atishayj2202/JPM-Quantitative-Portfolio-Optimization
+   Ken French daily factor data: Tuck School of Business data library.
+Code replication: python3 -m scripts.run_all from the repository root.
+
+Distinct from the SWEVO manuscript
+The SWEVO paper studies AOBL-SOS as a generic evolutionary search algorithm tested
+on benchmark mathematical functions. This Quantitative Finance manuscript investigates
+institutional portfolio construction under MINLP cardinality bounds, point-in-time
+walk-forward dynamics, Almgren-Chriss market impact, CSCV/DSR overfitting control,
+and Carhart 4-factor risk attribution.
+
