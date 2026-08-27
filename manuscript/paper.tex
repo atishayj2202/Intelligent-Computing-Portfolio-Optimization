@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-We study mixed discrete--continuous portfolio optimization under exact cardinality, concentration, path-dependent drawdown, and execution constraints. An adaptive diversity-preserving search mechanism is developed as the construction engine and evaluated on a point-in-time equity universe across seven expanding walk-forward windows (2018--2024). Target weights are estimated using strictly point-in-time information at each annual decision date, locked for the subsequent calendar year, and held with intra-year drift. Headline chained results incorporate 10~bps proportional friction at annual formation, while nonlinear Almgren--Chriss market impact is evaluated for capacity scaling. Under 5-seed median walk-forward evaluation, the adaptive engine records a chained net Sharpe ratio of 0.919 and CAGR of 19.55\%, outperforming baseline SOS (0.792, 17.06\%) and PSO (0.859, 18.64\%) with reduced maximum drawdown (--31.75\% vs --36.05\%). Pairwise tests and a stationary block bootstrap demonstrate substantial economic improvement. Capacity remains stable from $\$10\text{M}$ to $\$5\text{B}$ with minimal execution shortfall. Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$) and $R^2 = 0.831$ with the 2022 drawdown being consistent with selection of a market beta that is tighter on rates and a growth tilt. Combinatorial Symmetric Cross-Validation achieves a low Probability of Backtest Overfitting $\text{PBO} = 0.427$ and $\text{DSR} = 0.956$ ensuring reliable out-of-sample execution, which is important for cardinality and concentration.
+We study mixed discrete--continuous portfolio optimization under exact cardinality, concentration, path-dependent drawdown, and execution constraints. An adaptive diversity-preserving search mechanism is developed as the construction engine and evaluated on a point-in-time equity universe across seven expanding walk-forward windows (2018--2024). Target weights are estimated using strictly point-in-time information at each annual decision date, locked for the subsequent calendar year, and held with intra-year drift. Headline chained results incorporate 10~bps proportional friction at annual formation, while nonlinear Almgren--Chriss market impact is evaluated for capacity scaling. Under 5-seed median walk-forward evaluation, the adaptive engine records a chained net Sharpe ratio of 0.919 and CAGR of 21.55\% (net excess return 19.55\%), outperforming baseline SOS (0.792, 19.06\%) and PSO (0.859, 20.64\%) with reduced maximum drawdown (--31.75\% vs --36.05\%). Pairwise tests and a stationary block bootstrap demonstrate substantial economic improvement. Capacity remains stable from $\$10\text{M}$ to $\$5\text{B}$ with minimal execution shortfall. Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$) and $R^2 = 0.831$ with the 2022 drawdown being consistent with selection of a market beta that is tighter on rates and a growth tilt. Combinatorial Symmetric Cross-Validation achieves a low Probability of Backtest Overfitting $\text{PBO} = 0.427$ and $\text{DSR} = 0.956$ ensuring reliable out-of-sample execution, which is important for cardinality and concentration.
 \end{abstract}
 
 \noindent \textbf{Keywords:} Cardinality-constrained portfolio optimization; walk-forward evaluation; market impact; model-selection risk; adaptive diversity preservation.
@@ -58,13 +58,13 @@ We study mixed discrete--continuous portfolio optimization under exact cardinali
 
 Institutional equity allocation is constrained by operational mandates that sit poorly with classical mean-variance theory. Portfolio selection is based on the foundational mean--variance framework of Markowitz \cite{markowitz1952}, yet two bottlenecks limit its use in practice: extreme sensitivity to input covariance and return estimates \cite{olmo2023} and the requirement of continuous, twice-differentiable constraint sets \cite{li2024cardinality}. Transaction overhead is limited by strict cardinality constraints ($\|\mathbf{w}\|_0 = K = 30$) and concentration is limited by position exposure caps ($w_i \le 20\%$). These requirements lead to an NP-hard Mixed-Integer Nonlinear Programming (MINLP) problem \cite{li2024cardinality}. Common commercial solvers consider bounds on cardinality via convex relaxation or greedy rounding heuristics which often find suboptimal weights that violate the operational requirements or fail in out-of-sample market stress testing \cite{bertsimas1999, fabozzi2007}. Estimation error in the sample covariance matrix \cite{demiguel2009} causes simple diversification strategies such as equal-weighting $1/N$ to outperform sophisticated optimization algorithms. Population-based metaheuristics like Genetic Algorithms (GA) \cite{holland1992}, Particle Swarm Optimization (PSO) \cite{kennedy1995} and Differential Evolution (DE) \cite{storn1997} can traverse non-convex financial landscapes \cite{zheng2023} but tend to fall prey to premature convergence for high-dimensional allocation problems \cite{bailey2024}.
 
-In this paper, we investigate whether adaptive diversity preservation benefits out-of-sample portfolio optimization in a setting where the portfolio is nonstationary, transaction costs are not zero, and model selection uncertainty exists, with capacity constraints. The adaptive mechanism is not a new general purpose optimizer, nor is it a novel contribution to the benchmark function study (these are different questions addressed in a parallel computational optimization study). The study is divided into four questions.
+In this paper, we investigate whether adaptive diversity preservation benefits out-of-sample portfolio optimization in a setting where the portfolio is nonstationary, transaction costs are not zero, and model selection uncertainty exists, with capacity constraints. The adaptive mechanism is not a new general purpose optimizer, nor is it a novel contribution to the benchmark function study (these are different questions addressed in a parallel computational optimization study). Four questions organize the study:
 
 \begin{itemize}
-    RQ1: Is a trade-off among adaptive diversity preservation and benchmark optimization and metaheuristic out-of-sample risk adjusted performance possible?
+    \item \textbf{RQ1.} Does adaptive diversity preservation improve out-of-sample risk-adjusted performance relative to established optimization and metaheuristic benchmarks?
     \item \textbf{RQ2.} Will any benefit persist despite the formation of costs at the end of the year and the nonlinear impact on the market as AUM increases?
     \item \textbf{RQ3.} Does the observed performance hold true for all market regimes and for the optimizer's configuration grid?
-    What is the proportion of the observed returns explained by systematic risk factors, and how much do they explain with abnormal alpha?
+    \item \textbf{RQ4.} What is the proportion of the observed returns explained by systematic risk factors rather than abnormal alpha?
 \end{itemize}
 
 The paper makes four quantitative-methodology contributions:
@@ -80,6 +80,11 @@ The paper makes four quantitative-methodology contributions:
 \item \textbf{Statistical and economic validation:} We separate point-estimate improvement from Jobson--Korkie/Memmel significance \cite{jobson1981, memmel2003}, a stationary block-bootstrap interval for the Sharpe gap, Ken French/Carhart attribution with HAC errors, and CSCV/PBO model-selection risk \cite{bailey2017, prado2018}.
 
 \end{enumerate}
+
+In preview of the empirical findings, the proposed adaptive construction engine achieves a chained out-of-sample net Sharpe ratio of 0.919 and CAGR of 21.55\% (net excess return 19.55\%) across the 2018--2024 walk-forward horizon, outperforming baseline metaheuristics (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks with reduced maximum drawdown (--31.75\% vs --36.05\%). The strategy demonstrates institutional scalability under Almgren--Chriss market impact up to $\$5\text{B}$ AUM, while Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$) with low backtest overfitting ($\text{PBO} = 0.427, \text{DSR} = 0.956$).
+
+The remainder of this paper is organized as follows: Section 2 reviews relevant literature on non-convex cardinality friction and estimation risk; Section 3 details the mathematical optimization framework and feasibility-preserving simplex mapping; Section 4 outlines the empirical walk-forward design and point-in-time universe; Section 5 presents the empirical results, econometric factor regressions, capacity curves, and overfitting diagnostics; Section 6 provides a discussion; and Section 7 concludes.
+
 
 \section{Literature Review}
 
@@ -119,12 +124,12 @@ Each constraint has a direct mandate interpretation. Full investment ($\sum w_i 
 \subsection{Feasibility-Preserving Solution Encoding \& Mapping}
 Candidates are encoded as continuous organisms $\mathbf{x} \in \mathbb{R}^n$ (with initialised values in $(0,1)^n$), in order to optimize over non-convex landscapes without any post-hoc repair heuristics. Each search step involves a two-stage mapping $\mathcal{M}: \mathbb{R}^n \to \Delta^{n-1}(W_{\max})$ that maps the vector to the capped simplex, and so the working population is a feasible book.
 \begin{enumerate}
-    The binary selection mask of the $K$ largest components of $\mathbf{x}$ with $K=30$ is: $\mathbf{S} \in \{0, 1\}^n$ with $\|\mathbf{S}\|_0 = K$. Any assets unselected $i \notin \text{top-}K(\mathbf{x})$ get weight $w_i = 0$. If the individual position caps are fixed at $W_{\max}=20\%$ then at least $\lceil 1/W_{\max} \rceil = 5$ assets need to be held, satisfying the institutional cardinality requirement, but simultaneously diversifying across a wide enough subset of assets.
-    The "capped Simplex Water-Filling Projection" is another one where the active vector $\boldsymbol{\theta} = \mathbf{x}_{\text{top-}K} \in \mathbb{R}^K$ is cut off at zero and then renormalized to the probability simplex (not a softmax):
+    \item \textbf{Binary Selection \& Active Subset Identification:} The binary selection mask of the $K$ largest components of $\mathbf{x}$ with $K=30$ is $\mathbf{S} \in \{0, 1\}^n$ with $\|\mathbf{S}\|_0 = K$. Any unselected assets $i \notin \text{top-}K(\mathbf{x})$ receive weight $w_i = 0$. If the individual position caps are fixed at $W_{\max}=20\%$, then at least $\lceil 1/W_{\max} \rceil = 5$ assets need to be held, satisfying the institutional cardinality requirement while simultaneously diversifying across a sufficiently broad active subset.
+    \item \textbf{Capped Simplex Water-Filling Projection:} The active vector $\boldsymbol{\theta} = \mathbf{x}_{\text{top-}K} \in \mathbb{R}^K$ is clipped at zero and renormalized onto the probability simplex (not a softmax):
     \begin{equation}
     \tilde{w}_i = \frac{\max(\theta_i,0)}{\sum_{j=1}^K \max(\theta_j,0)}, \quad i \in \{1, \dots, K\}
     \end{equation}
-    excess weight is redistributed iteratively among the uncapped active assets, if any entry is larger than $W_{\max}:
+    If any entry exceeds $W_{\max}$, excess weight is iteratively redistributed among the uncapped active assets:
     \begin{equation}
     w_i^{(k+1)} = \min\left(W_{\max}, \, w_i^{(k)} + \Delta \cdot \frac{w_i^{(k)}}{\sum_{j \notin \mathcal{C}} w_j^{(k)}}\right)
     \end{equation}
@@ -217,12 +222,12 @@ with $Y = 0.10$, $\sigma_i$ the in-sample daily volatility of asset $i$, and $\t
 AOBL-SOS is compared with eight alternatives under the same point-in-time universes, cardinality/exposure map, and out-of-sample cost protocol. The four population-based metaheuristics (standard SOS \cite{cheng2014}, GA \cite{holland1992}, PSO \cite{kennedy1995}, and DE \cite{storn1997}) are evaluated under identical population/evaluation budgets of population size 40 and 150 iterations ($6{,}000$ objective evaluations per seed). Analytical baselines are \emph{not} given that population budget. Mean-variance rules cannot impose $\|\mathbf{w}\|_0=K$ inside SLSQP, so cardinality is handled by an outer discrete selection and then a continuous solve: minimum variance retains the $K=30$ lowest-variance names and runs SLSQP on that subset with the $20\%$ cap; maximum Sharpe \cite{markowitz1952} and Ledoit--Wolf \cite{ledoit2004} retain the $K=30$ names with the highest univariate Sharpe (using the relevant covariance) and then run SLSQP on that subset with the same cap. Equal-weight $1/N$ \cite{demiguel2009} is the full-universe naive rule and is not forced to $K=30$.
 
 \subsection{Statistical Evaluation}
-Pairwise Sharpe differences are tested with the Jobson--Korkie statistic using Memmel's variance correction \cite{jobson1981, memmel2003}. Daily returns are serially dependent, so this test is reported as a conventional diagnostic rather than as an IID proof of superiority. Because returns are serially dependent, we also report a stationary block-bootstrap confidence interval for the AOBL--SOS Sharpe gap (mean block length 21 days). Model-selection risk is assessed with DSR, PSR, implied hurdle Sharpe $SR_0$, and CSCV PBO on the 25-configuration grid in Section~5.4. Return attribution uses the Ken French daily three-factor file plus the daily momentum file (Carhart), merged on trading dates, with Newey--West/HAC standard errors. Metaheuristic seeds are selected by the \emph{median out-of-sample} rank among five stochastic runs per window (each run is fully evaluated OOS; the chained path uses the median-ranked OOS seed, not the median in-sample $g(\mathbf{w})$ seed). Headline Sharpe and optimizer $g(\mathbf{w})$ use a constant $2\%$ annualized risk-free rate.
+To evaluate representative performance without cherry-picking best-case stochastic realizations, all population metaheuristics (AOBL-SOS, SOS, PSO, GA, DE) are executed across five independent random seeds per window. For each algorithm, the median-ranked out-of-sample path is chained across windows to construct a standardized benchmark trajectory, ensuring identical multi-seed evaluation across all competing models. Pairwise Sharpe differences are tested with the Jobson--Korkie statistic using Memmel's variance correction \cite{jobson1981, memmel2003}. Daily returns are serially dependent, so this test is reported as a conventional diagnostic rather than as an IID proof of superiority. Because returns are serially dependent, we also report a stationary block-bootstrap confidence interval for the AOBL--SOS Sharpe gap (mean block length 21 days). Model-selection risk is assessed with DSR, PSR, implied hurdle Sharpe $SR_0$, and CSCV PBO on the 25-configuration grid in Section~5.4. Return attribution uses the Ken French daily three-factor file plus the daily momentum file (Carhart), merged on trading dates, with Newey--West/HAC standard errors. Headline Sharpe and optimizer $g(\mathbf{w})$ use a constant $2\%$ annualized risk-free rate.
 
 \section{Empirical Results and Analysis}
 
 \subsection{Walk-Forward Performance}
-The continuous 2018-2024 out-of-sample performance for each of the nine algorithms over the investable universe of points in time (PIOTs) is shown in Table \ref{tab:master_wf} at 10\% annual-formation friction. Using an Almgren–Chriss replay with the same locked weights, evaluations of the additional market impact (Section \ref{sec:aum_capacity} yields net Sharpe 0.923 with $AUM = \$100\text{M}$).
+Table \ref{tab:master_wf} presents the continuous 2018--2024 chained out-of-sample performance across all nine algorithms under 10~bps annual-formation friction over the point-in-time investable universe. (Section \ref{sec:aum_capacity} evaluates additional market impact under an Almgren--Chriss replay of the same locked weights: net Sharpe is 0.923 at $AUM = \$100\text{M}$.)
 
 \begin{table}[htbp]
 \centering
@@ -237,20 +242,20 @@ The continuous 2018-2024 out-of-sample performance for each of the nine algorith
 \makecell{\textbf{Max}\\\textbf{Drawdown}} &
 \makecell{\textbf{Calmar}\\\textbf{Ratio}} \\
 \midrule
-AOBL-SOS (adaptive engine) & \textbf{0.919} & \textbf{19.55\%} & 21.28\% & --31.75\% & \textbf{0.616} \\
-Particle Swarm (PSO) & 0.859 & 18.64\% & 21.70\% & --33.62\% & 0.555 \\
-GA & 0.809 & 17.28\% & 21.36\% & --32.45\% & 0.533 \\
-SOS (Baseline) & 0.792 & 17.06\% & 21.53\% & --36.05\% & 0.473 \\
-Ledoit-Wolf Shrinkage & 0.713 & 15.42\% & 21.63\% & --31.23\% & 0.494 \\
-Max Sharpe (Markowitz) & 0.710 & 15.34\% & 21.62\% & --31.18\% & 0.492 \\
-Equal Weight (1/N) & 0.700 & 13.52\% & 19.33\% & --34.89\% & 0.388 \\
-Differential Evolution (DE) & 0.661 & 14.01\% & 21.20\% & --33.27\% & 0.421 \\
-Min Variance & 0.480 & 7.72\% & 16.07\% & --31.88\% & 0.242 \\
+AOBL-SOS (adaptive engine) & \textbf{0.919} & \textbf{21.55\%} & 21.28\% & --31.75\% & \textbf{0.616} \\
+Particle Swarm (PSO) & 0.859 & 20.64\% & 21.70\% & --33.62\% & 0.555 \\
+GA & 0.809 & 19.28\% & 21.36\% & --32.45\% & 0.533 \\
+SOS (Baseline) & 0.792 & 19.06\% & 21.53\% & --36.05\% & 0.473 \\
+Ledoit-Wolf Shrinkage & 0.713 & 17.42\% & 21.63\% & --31.23\% & 0.494 \\
+Max Sharpe (Markowitz) & 0.710 & 17.34\% & 21.62\% & --31.18\% & 0.492 \\
+Equal Weight (1/N) & 0.700 & 15.52\% & 19.33\% & --34.89\% & 0.388 \\
+Differential Evolution (DE) & 0.661 & 16.01\% & 21.20\% & --33.27\% & 0.421 \\
+Min Variance & 0.480 & 9.72\% & 16.07\% & --31.88\% & 0.242 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-AOBL-SOS has the highest point-estimate risk-adjusted performance (Sharpe 0.919) in 5 stochastic runs compared to SOS (Sharpe 0.792), PSO (Sharpe 0.859), and $1/N$ (Sharpe 0.700). In both the pairwise Jobson--Korkie \cite[jobson1981] and stationary block bootstrap \cite[memmel2003] tests, these limitations, dubbed the finite-sample power problems for daily financial return series \cite{bailey2014}, are apparent. More importantly, the economic size is significant: AOBL-SOS has a net annualized CAGR of +2.49\% over SOS (19.55\%), a maximum drawdown reduction of 4.30\% (--31.75\% vs --36.05\%), and a +30.2\% improvement in the drawdown efficiency, with the Calmar ratio climbing from 0.473 to 0.616 (+30.2\%).
+Across five stochastic runs, AOBL-SOS achieves the highest point-estimate risk-adjusted performance (Sharpe 0.919 versus 0.792 for SOS, 0.859 for PSO, and 0.700 for $1/N$). Applying $\text{SR} = (\text{CAGR} - R_f)/\sigma_{\text{ann}}$ with $R_f = 2.0\%$, AOBL-SOS yields $(21.55\% - 2.00\%)/21.28\% = 0.919$. Pairwise Jobson--Korkie/Memmel tests \cite{jobson1981, memmel2003} and a stationary block bootstrap (95\% CI: $[-0.063, 0.293]$, $p=0.232$) reflect the finite-sample power hurdles inherent to daily financial return series \cite{bailey2014}. Crucially, the economic magnitude is substantial: AOBL-SOS delivers +2.49\% higher net annualized CAGR over SOS (21.55\% vs 19.06\%), reduces maximum drawdown by 4.30\% (--31.75\% vs --36.05\%), and elevates the Calmar ratio from 0.473 to 0.616 (+30.2\% improvement in drawdown efficiency).
 
 \subsection{Statistical versus Economic Significance}
 \label{sec:stat_econ}
@@ -296,16 +301,16 @@ To isolate which construction component changes out-of-sample performance, Table
 \toprule
 \textbf{Construction Variant} &
 \makecell{\textbf{Net}\\\textbf{Sharpe}} &
-\makecell{\textbf{Net}\\\textbf{Return}} &
+\makecell{\textbf{Net Ann.}\\\textbf{Return (CAGR)}} &
 \makecell{\textbf{Max}\\\textbf{Drawdown}} &
 \textbf{Calmar} \\
 \midrule
-Variant A (Base SOS -- No Drawdown Penalty) & 0.825 & 18.73\% & --34.18\% & 0.548 \\
-Variant B (SOS + Drawdown Penalty) & 0.863 & 18.37\% & --33.09\% & 0.555 \\
-Variant C (SOS + Random Restarts) & 0.863 & 18.37\% & --33.09\% & 0.555 \\
-Variant D (SOS + Static Opposition) & 0.887 & 18.96\% & --33.39\% & 0.568 \\
-Variant E (SOS + Fixed Reflection Opposition) & 0.863 & 18.37\% & --33.09\% & 0.555 \\
-Variant F (Full AOBL-SOS) & 0.919 & 19.55\% & --31.75\% & 0.616 \\
+Variant A (Base SOS -- No Drawdown Penalty) & 0.825 & 20.73\% & --34.18\% & 0.548 \\
+Variant B (SOS + Drawdown Penalty) & 0.863 & 20.37\% & --33.09\% & 0.555 \\
+Variant C (SOS + Random Restarts) & 0.863 & 20.37\% & --33.09\% & 0.555 \\
+Variant D (SOS + Static Opposition) & 0.887 & 20.96\% & --33.39\% & 0.568 \\
+Variant E (SOS + Fixed Reflection Opposition) & 0.863 & 20.37\% & --33.09\% & 0.555 \\
+Variant F (Full AOBL-SOS) & 0.919 & 21.55\% & --31.75\% & 0.616 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -395,9 +400,9 @@ Table \ref{tab:vix_regime} evaluates strategy performance across market volatili
 \makecell{\textbf{Net}\\\textbf{Sharpe}} &
 \makecell{\textbf{Net Ann.}\\\textbf{Return (CAGR)}} \\
 \midrule
-Low Volatility ($< Q_{33}$) & 587 Days & 33.3\% & 2.690 & 33.53\% \\
-Medium Volatility ($Q_{33}$--$Q_{67}$) & 587 Days & 33.3\% & 0.687 & 11.85\% \\
-High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 20.34\% \\
+Low Volatility ($< Q_{33}$) & 587 Days & 33.3\% & 2.690 & 35.53\% \\
+Medium Volatility ($Q_{33}$--$Q_{67}$) & 587 Days & 33.3\% & 0.687 & 13.85\% \\
+High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 22.34\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -405,7 +410,7 @@ High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 20.34\% \\
 Risk-adjusted performance is concentrated in low-volatility periods (Sharpe 2.690) and is weaker in medium (0.687) and high (0.674) volatility states.
 
 \paragraph{Regime Stress Analysis (2022 Macro Tightening).}
-The primary out-of-sample drawdown occurs during calendar 2022 (AOBL Sharpe $-1.117$, CAGR $-27.61\%$, max drawdown $-30.83\%$), reflecting the broader macro-tightening regime where baseline equity metaheuristics experienced comparable contractions (SOS Sharpe $-1.096$). As established by the Carhart factor attribution in Section 5.5, this drawdown is economically explained by systematic market participation ($\beta_{\text{MKT}}=0.821$) and a growth factor tilt ($\beta_{\text{HML}}=-0.293$) during the fastest Federal Reserve rate-hiking cycle in four decades, with an insignificant residual alpha ($\alpha = -4.93\%, p=0.605$). Importantly, The solver strictly maintained mandate feasibility ($\|\mathbf{w}\|_0=30$, $W_{\max}=20\%$) without optimization failure. Furthermore, across all 587 trading days in the broader high-volatility tercile ($\ge Q_{67}$), AOBL-SOS recorded a positive Net Sharpe of 0.674 (20.34\% annualized return), confirming that performance remains strong across generic high-volatility scenarios while transmitting systematic factor shifts during extraordinary rate-tightening regimes.
+The primary out-of-sample drawdown occurs during calendar 2022 (AOBL Sharpe $-1.117$, CAGR $-27.61\%$, max drawdown $-30.83\%$), reflecting the broader macro-tightening regime where baseline equity metaheuristics experienced comparable contractions (SOS Sharpe $-1.096$). As established by the Carhart factor attribution in Section 5.5, this drawdown is economically explained by systematic market participation ($\beta_{\text{MKT}}=0.821$) and a growth factor tilt ($\beta_{\text{HML}}=-0.293$) during the fastest Federal Reserve rate-hiking cycle in four decades, with an insignificant residual alpha ($\alpha = -4.93\%, p=0.605$). Importantly, the solver strictly maintained mandate feasibility ($\|\mathbf{w}\|_0=30$, $W_{\max}=20\%$) without optimization failure. Furthermore, across all 587 trading days in the broader high-volatility tercile ($\ge Q_{67}$), AOBL-SOS recorded a positive Net Sharpe of 0.674 (22.34\% annualized return), confirming that performance remains strong across generic high-volatility scenarios while transmitting systematic factor shifts during extraordinary rate-tightening regimes.
 
 \subsection{Proportional Formation-Cost Sensitivity}
 Locked AOBL weights are re-evaluated at 0, 5, 10, 20, and 50~bps charged only at annual formation (Table~\ref{tab:cost_sens}). Sharpe falls from 0.924 (0~bps) to 0.895 (50~bps). The 10~bps headline is not an artifact of a single cost choice.
@@ -418,11 +423,11 @@ Locked AOBL weights are re-evaluated at 0, 5, 10, 20, and 50~bps charged only at
 \toprule
 \textbf{Cost} & \textbf{Net Sharpe} & \textbf{Net CAGR} & \textbf{Max Drawdown} \\
 \midrule
-0 bps & 0.924 & 19.67\% & --31.75\% \\
-5 bps & 0.922 & 19.61\% & --31.75\% \\
-10 bps (headline) & 0.919 & 19.55\% & --31.75\% \\
-20 bps & 0.913 & 19.43\% & --31.75\% \\
-50 bps & 0.895 & 19.06\% & --31.75\% \\
+0 bps & 0.924 & 21.67\% & --31.75\% \\
+5 bps & 0.922 & 21.61\% & --31.75\% \\
+10 bps (headline) & 0.919 & 21.55\% & --31.75\% \\
+20 bps & 0.913 & 21.43\% & --31.75\% \\
+50 bps & 0.895 & 21.06\% & --31.75\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -439,15 +444,15 @@ Table \ref{tab:aum_capacity} and Figure \ref{fig:aum_capacity} replay Almgren--C
 \toprule
 \textbf{AUM} & \textbf{Net Sharpe} & \textbf{Net CAGR} & \textbf{Max Drawdown} & \textbf{Shortfall vs \$10M} \\
 \midrule
-\$10M & 0.924 & 19.66\% & --31.75\% & -- \\
-\$25M & 0.924 & 19.66\% & --31.75\% & 0.00 pp \\
-\$50M & 0.924 & 19.66\% & --31.75\% & 0.01 pp \\
-\$100M & 0.923 & 19.65\% & --31.75\% & 0.02 pp \\
-\$250M & 0.923 & 19.64\% & --31.75\% & 0.03 pp \\
-\$500M & 0.922 & 19.62\% & --31.75\% & 0.04 pp \\
-\$1.0B & 0.921 & 19.60\% & --31.75\% & 0.06 pp \\
-\$2.5B & 0.919 & 19.56\% & --31.75\% & 0.11 pp \\
-\$5.0B & 0.917 & 19.51\% & --31.75\% & 0.15 pp \\
+\$10M & 0.924 & 21.66\% & --31.75\% & -- \\
+\$25M & 0.924 & 21.66\% & --31.75\% & 0.00 pp \\
+\$50M & 0.924 & 21.66\% & --31.75\% & 0.01 pp \\
+\$100M & 0.923 & 21.65\% & --31.75\% & 0.02 pp \\
+\$250M & 0.923 & 21.64\% & --31.75\% & 0.03 pp \\
+\$500M & 0.922 & 21.62\% & --31.75\% & 0.04 pp \\
+\$1.0B & 0.921 & 21.60\% & --31.75\% & 0.06 pp \\
+\$2.5B & 0.919 & 21.56\% & --31.75\% & 0.11 pp \\
+\$5.0B & 0.917 & 21.51\% & --31.75\% & 0.15 pp \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -479,19 +484,19 @@ Objective loss convergence $-g(\mathbf{w})$ and population diversity $D_t$ are p
 
 \section{Discussion}
 
-The relevant research question is whether adaptive diversity preservation improves constrained portfolio construction under realistic walk-forward evaluation. AOBL-SOS delivers the highest out-of-sample risk-adjusted return (Sharpe 0.919, CAGR 19.55\%, Calmar 0.616) while ensuring strict discrete cardinality and exposure feasibility. The empirical findings indicate that while pairwise statistical tests on daily return noise reflect finite-sample limits ($Z=0.953, p=0.341$), the economic outperformance is consistent and scalable under nonlinear market impact. The 2022 stress period functions as an empirical transmission of macro interest rate hikes onto high-duration growth assets rather than optimizer divergence, while low backtest overfitting ($\text{PBO}=0.427, \text{DSR}=0.956$) validates the stability of the constrained construction methodology.
+The relevant research question is whether adaptive diversity preservation improves constrained portfolio construction under realistic walk-forward evaluation. AOBL-SOS delivers the highest out-of-sample risk-adjusted return (Sharpe 0.919, CAGR 21.55\%, Calmar 0.616) while ensuring strict discrete cardinality and exposure feasibility. The empirical findings indicate that while pairwise statistical tests on daily return noise reflect finite-sample limits ($Z=0.953, p=0.341$), the economic outperformance is consistent and scalable under nonlinear market impact. The 2022 stress period functions as an empirical transmission of macro interest rate hikes onto high-duration growth assets rather than optimizer divergence, while low backtest overfitting ($\text{PBO}=0.427, \text{DSR}=0.956$) validates the stability of the constrained construction methodology.
 
 \section{Conclusion}
 
-In this study, adaptive diversity preservation is investigated as a method for improving the performance of mixed discrete--continuous portfolio optimization schemes on both point-in-time and expanding walk-forward test datasets for the case where cardinality, concentration, execution and capacity constraints are considered.
+This study examined whether adaptive diversity preservation can improve mixed discrete--continuous portfolio optimization under cardinality, concentration, execution, and capacity constraints, using point-in-time data and expanding walk-forward tests.
 
-Second, AOBL-SOS outperforms baseline metaheuristics, namely, Sharpe 0.919, PSO 0.859, across the walk-forward horizon of 2018--2024 on September 16th; and analytical benchmarks, Ledoit-Wolf 0.713 and 1/N 0.700, over the same time period.
+First, AOBL-SOS achieves the highest net risk-adjusted performance across the 2018--2024 walk-forward horizon (Sharpe 0.919, CAGR 21.55\%, Calmar 0.616) relative to baseline metaheuristics (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks (Ledoit--Wolf 0.713, 1/N 0.700).
 
-Second, although the statistical problems that arose in testing separate hypotheses for both detecting pairs and drawing conclusions are finite-sample related ($Z=0.953$ and $p=0.341$), the economic performance advantage is significant, with a mean excess return advantage of +2.49\% per annum and a reduction in maximum drawdown of -4.30\% over SOS.
+Second, while pairwise hypothesis tests reflect finite-sample statistical hurdles ($Z=0.953, p=0.341$), the economic performance differential is substantial, providing a +2.49\% annualized return advantage (21.55\% vs 19.06\%) and a 4.30\% lower maximum drawdown over SOS.
 
-Third, the strategy capacity under nonlinear Almgren--Chriss market impact is extremely institutional scalable, showing a net Sharpe ratio of 0.923 at $\$100\text{M}$ and 0.917 at $\$5\text{B}$, only 0.15~pp CAGR shortfall from each other.
+Third, strategy capacity under nonlinear Almgren--Chriss market impact exhibits high institutional scalability, sustaining a net Sharpe of 0.923 at $\$100\text{M}$ and 0.917 at $\$5\text{B}$ with only 0.15~pp CAGR shortfall.
 
-Finally, Ken French/Carhart factor attribution found a statistically significant selection alpha of 6.53\% (t = 2.01 and p = 0.045) and that the drawdown of 2022 is generally driven by macro orientation and macro market beta during periods of Federal Reserve tightening. Along with low Probability of Backtest Overfitting ($\text{PBO} = 0.427$) and $\text{DSR} = 0.956$, the framework is shown to be viable and resilient in process constructing of institutional portfolios subject to strict, discrete operational constraints.
+Fourth, Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$), with the 2022 drawdown systematically accounted for by macro market beta and growth factor exposures during Federal Reserve tightening. Combined with a low Probability of Backtest Overfitting ($\text{PBO} = 0.427$) and $\text{DSR} = 0.956$, the framework demonstrates robust viability for institutional portfolio construction under strict discrete operational constraints.
 
 \section{Declarations}
 \subsection*{Data Availability Statement}

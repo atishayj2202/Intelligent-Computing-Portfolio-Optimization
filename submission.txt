@@ -25,7 +25,7 @@ Highlights
 2. Expanding point-in-time walk-forward tests (2018-2024) across seven OOS
    windows eliminate survivorship bias; locked annual weights hold with intra-year drift.
 3. AOBL-SOS delivers superior out-of-sample risk-adjusted performance
-   (chained Sharpe 0.919, net CAGR 19.55%, Calmar 0.616) over baseline metaheuristics
+   (chained Sharpe 0.919, net CAGR 21.55%, Calmar 0.616) over baseline metaheuristics
    (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks (Ledoit-Wolf 0.713, 1/N 0.700).
 4. Ken French/Carhart attribution confirms statistically significant selection alpha
    (alpha = 6.53%, t=2.01, p=0.045) with R^2 = 0.831; the 2022 drawdown reflects

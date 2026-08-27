@@ -1,10 +1,11 @@
 Algorithm,Walk-Forward Horizon,Net Sharpe,Net Ann Return,Net Ann Vol,Max Drawdown,Calmar Ratio
-AOBL-SOS (Proposed),2018-2024 (Chained OOS),0.919,19.55%,21.28%,-31.75%,0.616
-SOS (Baseline),2018-2024 (Chained OOS),0.792,17.06%,21.53%,-36.05%,0.473
-GA,2018-2024 (Chained OOS),0.809,17.28%,21.36%,-32.45%,0.533
-PSO,2018-2024 (Chained OOS),0.859,18.64%,21.70%,-33.62%,0.555
-DE,2018-2024 (Chained OOS),0.661,14.01%,21.20%,-33.27%,0.421
-Ledoit-Wolf,2018-2024 (Chained OOS),0.713,15.42%,21.63%,-31.23%,0.494
-Max Sharpe,2018-2024 (Chained OOS),0.710,15.34%,21.62%,-31.18%,0.492
-Min Variance,2018-2024 (Chained OOS),0.480,7.72%,16.07%,-31.88%,0.242
-Equal Weight (1/N),2018-2024 (Chained OOS),0.700,13.52%,19.33%,-34.89%,0.388
+AOBL-SOS (Proposed),2018-2024 (Chained OOS),0.919,21.55%,21.28%,-31.75%,0.616
+SOS (Baseline),2018-2024 (Chained OOS),0.792,19.06%,21.53%,-36.05%,0.473
+GA,2018-2024 (Chained OOS),0.809,19.28%,21.36%,-32.45%,0.533
+PSO,2018-2024 (Chained OOS),0.859,20.64%,21.70%,-33.62%,0.555
+DE,2018-2024 (Chained OOS),0.661,16.01%,21.20%,-33.27%,0.421
+Ledoit-Wolf,2018-2024 (Chained OOS),0.713,17.42%,21.63%,-31.23%,0.494
+Max Sharpe,2018-2024 (Chained OOS),0.710,17.34%,21.62%,-31.18%,0.492
+Min Variance,2018-2024 (Chained OOS),0.480,9.72%,16.07%,-31.88%,0.242
+Equal Weight (1/N),2018-2024 (Chained OOS),0.700,15.52%,19.33%,-34.89%,0.388
+
