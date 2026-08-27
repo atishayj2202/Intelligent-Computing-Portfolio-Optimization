@@ -225,7 +225,7 @@ def run_expanding_walk_forward(data_path="data/sp500_daily.csv", n_seeds=5, iter
             'Algorithm': alg,
             'Walk-Forward Horizon': '2018-2024 (Chained OOS)',
             'Net Sharpe': f"{sh:.3f}",
-            'Net Ann Return': f"{ann_r*100:.2f}%",
+            'Net Ann Return': f"{cagr*100:.2f}%",
             'Net Ann Vol': f"{ann_v*100:.2f}%",
             'Max Drawdown': f"{max_dd*100:.2f}%",
             'Calmar Ratio': f"{calmar:.3f}"

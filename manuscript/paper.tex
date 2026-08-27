@@ -398,11 +398,11 @@ Table \ref{tab:vix_regime} evaluates strategy performance across market volatili
 \textbf{Observations} &
 \textbf{\% of Sample} &
 \makecell{\textbf{Net}\\\textbf{Sharpe}} &
-\makecell{\textbf{Net Ann.}\\\textbf{Return (CAGR)}} \\
+\makecell{\textbf{Net Ann.}\\\textbf{Return}} \\
 \midrule
-Low Volatility ($< Q_{33}$) & 587 Days & 33.3\% & 2.690 & 35.53\% \\
-Medium Volatility ($Q_{33}$--$Q_{67}$) & 587 Days & 33.3\% & 0.687 & 13.85\% \\
-High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 22.34\% \\
+Low Volatility ($< Q_{33}$) & 587 Days & 33.3\% & 2.690 & 33.53\% \\
+Medium Volatility ($Q_{33}$--$Q_{67}$) & 587 Days & 33.3\% & 0.687 & 11.85\% \\
+High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 20.34\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -410,7 +410,7 @@ High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 22.34\% \\
 Risk-adjusted performance is concentrated in low-volatility periods (Sharpe 2.690) and is weaker in medium (0.687) and high (0.674) volatility states.
 
 \paragraph{Regime Stress Analysis (2022 Macro Tightening).}
-The primary out-of-sample drawdown occurs during calendar 2022 (AOBL Sharpe $-1.117$, CAGR $-27.61\%$, max drawdown $-30.83\%$), reflecting the broader macro-tightening regime where baseline equity metaheuristics experienced comparable contractions (SOS Sharpe $-1.096$). As established by the Carhart factor attribution in Section 5.5, this drawdown is economically explained by systematic market participation ($\beta_{\text{MKT}}=0.821$) and a growth factor tilt ($\beta_{\text{HML}}=-0.293$) during the fastest Federal Reserve rate-hiking cycle in four decades, with an insignificant residual alpha ($\alpha = -4.93\%, p=0.605$). Importantly, the solver strictly maintained mandate feasibility ($\|\mathbf{w}\|_0=30$, $W_{\max}=20\%$) without optimization failure. Furthermore, across all 587 trading days in the broader high-volatility tercile ($\ge Q_{67}$), AOBL-SOS recorded a positive Net Sharpe of 0.674 (22.34\% annualized return), confirming that performance remains strong across generic high-volatility scenarios while transmitting systematic factor shifts during extraordinary rate-tightening regimes.
+The primary out-of-sample drawdown occurs during calendar 2022 (AOBL Sharpe $-1.117$, CAGR $-27.61\%$, max drawdown $-30.83\%$), reflecting the broader macro-tightening regime where baseline equity metaheuristics experienced comparable contractions (SOS Sharpe $-1.096$). As established by the Carhart factor attribution in Section 5.5, this drawdown is economically explained by systematic market participation ($\beta_{\text{MKT}}=0.821$) and a growth factor tilt ($\beta_{\text{HML}}=-0.293$) during the fastest Federal Reserve rate-hiking cycle in four decades, with an insignificant residual alpha ($\alpha = -4.93\%, p=0.605$). Importantly, the solver strictly maintained mandate feasibility ($\|\mathbf{w}\|_0=30$, $W_{\max}=20\%$) without optimization failure. Furthermore, across all 587 trading days in the broader high-volatility tercile ($\ge Q_{67}$), AOBL-SOS recorded a positive Net Sharpe of 0.674 (20.34\% annualized return), confirming that performance remains strong across generic high-volatility scenarios while transmitting systematic factor shifts during extraordinary rate-tightening regimes.
 
 \subsection{Proportional Formation-Cost Sensitivity}
 Locked AOBL weights are re-evaluated at 0, 5, 10, 20, and 50~bps charged only at annual formation (Table~\ref{tab:cost_sens}). Sharpe falls from 0.924 (0~bps) to 0.895 (50~bps). The 10~bps headline is not an artifact of a single cost choice.

@@ -179,6 +179,7 @@ def summarize_chained_returns(net_returns, rf_annual=0.02):
     max_dd = np.min((cum - running_max) / running_max)
     calmar = ann_r / abs(max_dd) if max_dd < 0 else np.nan
     return {
+        'cagr': cagr,
         'ann_return': ann_r,
         'ann_vol': ann_v,
         'sharpe': sharpe,

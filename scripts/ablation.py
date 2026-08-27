@@ -158,7 +158,7 @@ def run_walk_forward_ablation_study(data_path="data/sp500_daily.csv", n_seeds=5,
             'Ablation Variant': var_name,
             'Walk-Forward Horizon': '2018-2024 (Chained OOS)',
             'Net Sharpe': f"{sh:.3f}",
-            'Net Ann Return': f"{ann_r*100:.2f}%",
+            'Net Ann Return': f"{cagr*100:.2f}%",
             'Max Drawdown': f"{max_dd*100:.2f}%",
             'Calmar Ratio': f"{calmar:.3f}"
         })

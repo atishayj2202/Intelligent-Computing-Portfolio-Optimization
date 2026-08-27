@@ -187,7 +187,7 @@ def run_cost_sensitivity(selected_weights_csv, data_path, output_dir="results", 
         rows.append({
             "Cost_bps": bps,
             "Net Sharpe": summ["sharpe"],
-            "Net CAGR": summ["ann_return"],
+            "Net CAGR": summ["cagr"],
             "Max Drawdown": summ["max_drawdown"],
         })
     df = pd.DataFrame(rows)
@@ -219,17 +219,17 @@ def run_capacity_from_weights(selected_weights_csv, data_path, output_dir="resul
             chained.extend(res["net_returns"])
         summ = summarize_chained_returns(chained, rf_annual=rf_annual)
         if cagr_10m is None:
-            cagr_10m = summ["ann_return"]
-        shortfall = (cagr_10m - summ["ann_return"]) * 100.0
+            cagr_10m = summ["cagr"]
+        shortfall = (cagr_10m - summ["cagr"]) * 100.0
         label = f"${aum/1e6:.0f}M" if aum < 1e9 else f"${aum/1e9:.1f}B"
         rows.append({
             "AUM": label,
             "AUM_val": aum,
             "Net Sharpe": summ["sharpe"],
-            "Net CAGR": summ["ann_return"] * 100.0,
+            "Net CAGR": summ["cagr"] * 100.0,
             "Max Drawdown": summ["max_drawdown"] * 100.0,
             "Shortfall_vs_10M_pp": 0.0 if aum == aums[0] else shortfall,
-            "Execution_drag_pct_NAV": 100.0 * (1.0 - (1.0 + summ["ann_return"]) / (1.0 + cagr_10m)) if aum != aums[0] else 0.0,
+            "Execution_drag_pct_NAV": 100.0 * (1.0 - (1.0 + summ["cagr"]) / (1.0 + cagr_10m)) if aum != aums[0] else 0.0,
         })
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(output_dir, "aum_capacity_curve.csv"), index=False)

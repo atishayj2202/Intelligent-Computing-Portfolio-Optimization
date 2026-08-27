@@ -221,11 +221,11 @@ def run_master_suite(output_dir="results", manuscript_dir="manuscript"):
     # ---------------------------------------------------------
     # 7. Copying generated assets to manuscript/
     # ---------------------------------------------------------
-    print("\n[7/7] Copying all final CSVs and figures to manuscript/...")
+    print("\n[7/7] Copying all final figures to manuscript/...")
     for item in os.listdir(output_dir):
         s = os.path.join(output_dir, item)
         d = os.path.join(manuscript_dir, item)
-        if os.path.isfile(s) and item.endswith((".csv", ".png")):
+        if os.path.isfile(s) and item.endswith(".png"):
             shutil.copy2(s, d)
             
     print("\n" + "=" * 70)
