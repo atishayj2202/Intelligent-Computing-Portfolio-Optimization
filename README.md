@@ -97,8 +97,8 @@ Chained out-of-sample performance across all 9 competing allocation algorithms e
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/atishayj2202/JPM-Quantitative-Portfolio-Optimization.git
-cd JPM-Quantitative-Portfolio-Optimization
+git clone https://github.com/atishayj2202/QF-Quantitative-Portfolio-Optimization.git
+cd QF-Quantitative-Portfolio-Optimization
 
 # 2. Install dependencies
 pip install numpy pandas scipy scikit-learn matplotlib statsmodels requests

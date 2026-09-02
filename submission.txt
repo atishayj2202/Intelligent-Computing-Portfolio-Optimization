@@ -2,8 +2,8 @@ Quantitative Finance submission items
 ====================================
 
 Title
-Institutional Portfolio Construction under Cardinality Friction:
-An Adaptive Diversity-Preserving Walk-Forward Study
+Institutional Portfolio Optimization under Cardinality and Execution Frictions:
+A Walk-Forward Evaluation of Adaptive Diversity Preservation
 
 Corresponding author
 Atishaya Jain, Department of Computer Science and Engineering,
@@ -27,10 +27,10 @@ Highlights
 3. AOBL-SOS delivers superior out-of-sample risk-adjusted performance
    (chained Sharpe 0.919, net CAGR 21.55%, Calmar 0.616) over baseline metaheuristics
    (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks (Ledoit-Wolf 0.713, 1/N 0.700).
-4. Ken French/Carhart attribution confirms statistically significant selection alpha
+4. Ken French/Carhart attribution yields a marginally significant conditional residual alpha
    (alpha = 6.53%, t=2.01, p=0.045) with R^2 = 0.831; the 2022 drawdown reflects
    macro interest rate tightening market beta and growth factor transmission.
-5. Multiple-testing validation yields low Probability of Backtest Overfitting
+5. Multiple-testing validation yields moderate Probability of Backtest Overfitting
    (PBO = 0.427) and DSR = 0.956; Almgren-Chriss capacity scaling shows minimal
    shortfall (0.15 pp CAGR drag at $5B AUM).
 
@@ -41,7 +41,7 @@ Ethics: Not applicable (public market data only).
 Author contributions: All authors contributed to design, implementation,
    and writing; Atishaya Jain is corresponding author.
 Data availability: Replication code and equity panel data are at
-   https://github.com/atishayj2202/JPM-Quantitative-Portfolio-Optimization
+   https://github.com/atishayj2202/QF-Quantitative-Portfolio-Optimization
    Ken French daily factor data: Tuck School of Business data library.
 Code replication: python3 -m scripts.run_all from the repository root.
 
