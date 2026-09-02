@@ -32,14 +32,14 @@
 \title{\textbf{Institutional Portfolio Optimization under Cardinality and Execution Frictions:\\A Walk-Forward Evaluation of Adaptive Diversity Preservation}}
 
 \author{
-    \textbf{Atishaya Jain}\textsuperscript{1},
-    \textbf{Karan Jangra}\textsuperscript{1},
-    \textbf{Vaibhav Pacherwal}\textsuperscript{1}\\
+    \textbf{Atishaya Jain}\textsuperscript{1,*}, \quad
+    \textbf{Karan Jangra}\textsuperscript{1}, \quad
+    \textbf{Vaibhav Pacherwal}\textsuperscript{1}\\[0.3em]
+    \textbf{Rishabh Vats}\textsuperscript{1}, \quad
+    \textbf{Rajeev Kumar}\textsuperscript{1}\\[0.5em]
     \small \textsuperscript{1}Department of Computer Science and Engineering,\\
-    \small Netaji Subhas University of Technology (NSUT), New Delhi, India\\
-    \small \texttt{atishaya.jain.ug23@nsut.ac.in},
-    \texttt{karan.jangra.ug23@nsut.ac.in},
-    \texttt{vaibhav.pacherwal.ug23@nsut.ac.in}
+    \small Netaji Subhas University of Technology (NSUT), New Delhi, India\\[0.3em]
+    \small \textsuperscript{*}Corresponding author: \texttt{atishaya.jain.ug23@nsut.ac.in}
 }
 
 \date{\today}
@@ -49,7 +49,7 @@
 \maketitle
 
 \begin{abstract}
-We study mixed discrete--continuous portfolio optimization under exact cardinality, concentration, path-dependent drawdown, and execution constraints. An adaptive diversity-preserving search mechanism is developed as the construction engine and evaluated on a point-in-time equity universe across seven expanding walk-forward windows (2018--2024). Target weights are estimated using strictly point-in-time information at each annual decision date, locked for the subsequent calendar year, and held with intra-year drift. Headline chained results incorporate 10~bps proportional friction at annual formation, while nonlinear Almgren--Chriss market impact is evaluated for capacity scaling. Under 5-seed median walk-forward evaluation, the adaptive engine records a chained net Sharpe ratio of 0.919 and CAGR of 21.55\% (net excess return 19.55\%), outperforming baseline SOS (0.792, 19.06\%) and PSO (0.859, 20.64\%) with reduced maximum drawdown (--31.75\% vs --36.05\%). Pairwise tests and a stationary block bootstrap demonstrate substantial economic improvement. Capacity remains stable from $\$10\text{M}$ to $\$5\text{B}$ with minimal execution shortfall. Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$) and $R^2 = 0.831$ with the 2022 drawdown being consistent with selection of a market beta that is tighter on rates and a growth tilt. Combinatorial Symmetric Cross-Validation achieves a low Probability of Backtest Overfitting $\text{PBO} = 0.427$ and $\text{DSR} = 0.956$ ensuring reliable out-of-sample execution, which is important for cardinality and concentration.
+Institutional portfolio selection under exact cardinality ($\|\mathbf{w}\|_0 = K$), position concentration caps, and path-dependent drawdown penalties constitutes an NP-hard mixed discrete--continuous problem where classical quadratic programming fails and standard metaheuristics succumb to premature diversity collapse. We propose an institutional construction framework based on Adaptive Opposition-Based Learning Symbiotic Organisms Search (AOBL-SOS), distinguished by two structural mechanisms: an exact feasibility-preserving projection onto the capped cardinality simplex that avoids post-hoc repair heuristics, and a stagnation-triggered centroid opposition operator tailored to discontinuous feasible topologies. Evaluated across a 7-window expanding walk-forward horizon (2018--2024) on a point-in-time S\&P~500 cross-section with annually locked targets and simple-return drift, the adaptive engine achieves a chained out-of-sample net Sharpe ratio of 0.919, CAGR of 21.55\%, and Calmar ratio of 0.616 under 10~bps annual formation friction. This substantially improves upon baseline SOS (0.792, 19.06\%) and PSO (0.859, 20.64\%) while reducing maximum drawdown (--31.75\% vs --36.05\%). Nonlinear Almgren--Chriss execution modeling confirms institutional scalability up to $\$5\text{B}$ AUM with minimal shortfall (0.15~pp CAGR drag). Econometric attribution reveals that the strategy operates as an effective systematic factor harvester ($R^2 = 0.831$) with a marginally significant conditional residual alpha ($\alpha = 6.53\%, p=0.045$), while Combinatorial Symmetric Cross-Validation establishes moderate parameter stability ($\text{PBO} = 0.427, \text{DSR} = 0.956$).
 \end{abstract}
 
 \noindent \textbf{Keywords:} Cardinality-constrained portfolio optimization; walk-forward evaluation; market impact; model-selection risk; adaptive diversity preservation.
@@ -75,33 +75,18 @@ The paper makes four quantitative-methodology contributions:
 
 \item \textbf{Realistic out-of-sample evaluation:} We evaluate the engine under point-in-time universe construction and expanding walk-forward estimation (2018--2024), with annually locked targets implemented as a calendar-year buy-and-hold book that is allowed to drift.
 
-\item \textbf{Frictions and capacity:} We report headline results under 10~bps annual-formation costs and quantify performance deterioration and implementation shortfall under nonlinear Almgren--Chriss impact as AUM scales from $\$10\text{M}$ to $\$5\text{B}$ \cite{horst2024}.
+\item \textbf{Frictions and capacity:} We report headline results under 10~bps annual-formation costs and quantify performance deterioration and implementation shortfall under nonlinear Almgren--Chriss impact as AUM scales from $\$10\text{M}$ to $\$5\text{B}$ \cite{almgren2001, horst2024}.
 
 \item \textbf{Statistical and economic validation:} We separate point-estimate improvement from Jobson--Korkie/Memmel significance \cite{jobson1981, memmel2003}, a stationary block-bootstrap interval for the Sharpe gap, Ken French/Carhart attribution with HAC errors, and CSCV/PBO model-selection risk \cite{bailey2017, prado2018}.
 
 \end{enumerate}
 
-In preview of the empirical findings, the proposed adaptive construction engine achieves a chained out-of-sample net Sharpe ratio of 0.919 and CAGR of 21.55\% (net excess return 19.55\%) across the 2018--2024 walk-forward horizon, outperforming baseline metaheuristics (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks with reduced maximum drawdown (--31.75\% vs --36.05\%). The strategy demonstrates institutional scalability under Almgren--Chriss market impact up to $\$5\text{B}$ AUM, while Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$) with low backtest overfitting ($\text{PBO} = 0.427, \text{DSR} = 0.956$).
-
-The remainder of this paper is organized as follows: Section 2 reviews relevant literature on non-convex cardinality friction and estimation risk; Section 3 details the mathematical optimization framework and feasibility-preserving simplex mapping; Section 4 outlines the empirical walk-forward design and point-in-time universe; Section 5 presents the empirical results, econometric factor regressions, capacity curves, and overfitting diagnostics; Section 6 provides a discussion; and Section 7 concludes.
-
+In preview, the proposed adaptive construction engine achieves a chained out-of-sample net Sharpe ratio of 0.919 and CAGR of 21.55\% (net excess return 19.55\%) across the 2018--2024 walk-forward horizon, outperforming baseline metaheuristics (SOS Sharpe 0.792, PSO 0.859) and analytical benchmarks with reduced maximum drawdown (--31.75\% vs --36.05\%). The strategy demonstrates institutional scalability under Almgren--Chriss market impact up to $\$5\text{B}$ AUM, while Carhart attribution yields a marginally significant conditional residual alpha ($\alpha = 6.53\%, p=0.045$) with moderate overfitting risk ($\text{PBO} = 0.427, \text{DSR} = 0.956$). The remainder of this paper is organized as follows: Section~2 reviews relevant literature; Section~3 details the mathematical optimization framework and simplex mapping; Section~4 outlines the empirical design; Section~5 presents empirical results, factor regressions, and capacity curves; Section~6 discusses implications; and Section~7 concludes.
 
 \section{Literature Review}
+Portfolio selection is grounded in the mean--variance framework of Markowitz \cite{markowitz1952}, yet estimation error in sample covariance matrices often leads unconstrained optimizers to underperform naive $1/N$ diversification \cite{demiguel2009, olmo2023}. Operational mandates further complicate allocation: exact cardinality constraints ($\|\mathbf{w}\|_0 = K$) require selecting $K$ active assets from $n$ candidates, forming an NP-hard Mixed-Integer Nonlinear Programming (MINLP) problem with $\binom{n}{K}$ discrete sub-problems \cite{woodside2011, li2024cardinality}. While sparse portfolio estimators \cite{brodie2009} and $L_1$-regularization promote sparsity, they cannot simultaneously guarantee exact cardinality $K$ and position exposure caps $W_{\max}$ without distorting risk-return trade-offs. Constrained formulations and heuristic approximations \cite{bertsimas1999, fabozzi2007} therefore treat discrete operational bounds as structural constraints that alter the topology of the feasible set.
 
-\subsection{Cardinality Constraints}
-The cardinality constraint $\|w\|_0 = K$ requires the portfolio to hold exactly $K$ active assets from an investable universe of $n$ stocks (the implementation enforces exact top-$K$ selection, not an inequality bound). Exact solutions require solving a combinatorial choice of $\binom{n}{K}$ continuous sub-problems \cite{woodside2011}. Sparse portfolio estimators \cite{brodie2009} and $L_1$-regularization promote sparsity, but cannot simultaneously specify cardinality $K$ and upper bounds on position $W_{\max}$, without compromising the return-risk objective function.
-
-\subsection{Portfolio Estimation Error}
-Mean-variance weights are very sensitive to the estimates of the means and of the covariances \cite{olmo2023}. DeMiguel et al. \cite{demiguel2009} demonstrate that naive $1/N$ diversification often leads to superior out of sample performance than optimized portfolios, demonstrating the strength of the estimation error effect on in-sample efficiency. Robust and constrained formulations \cite{fabozzi2007} and mixed-integer constructions used in practice \cite{bertsimas1999} therefore treat operational bounds not as numerical nuisances but as economically motivated restrictions that change the feasible set.
-
-\subsection{Metaheuristic Portfolio Construction}
-Stochastic population-based metaheuristics avoid differentiability constraints by evaluating candidate allocations through an objective fitness function \citep{maringer2005, corne2012}. Symbiotic Organisms Search (SOS) \cite{cheng2014} is a parameter-free search procedure whose updates do not require algorithm-specific tuning constants. In high-dimensional financial spaces, however, population vectors can collapse along dominant covariance directions, so that population diversity $D_t$ decays rapidly. Opposition-based learning (OBL) \cite{gopi2024, tizhoosh2005} accelerates search by evaluating opposite candidates, but classical OBL operators of the form $lb + ub - x$ are not defined on a capped probability simplex. We therefore apply a centroid-based adaptive opposition operator as part of the constrained allocation engine, rather than as a standalone algorithmic contribution.
-
-\subsection{Execution Costs and Capacity}
-Theoretical alpha frequently vanishes in live execution due to bid-ask spread friction and market-impact shortfall \cite{horst2024}. Institutional optimal-execution frameworks, such as the Almgren--Chriss square-root model \cite{horst2024}, quantify the nonlinear costs incurred when trading block orders relative to Average Daily Volume (ADV). Capacity analysis is therefore an economic test: a constrained optimizer is useful only if risk-adjusted performance remains acceptable as AUM scales.
-
-\subsection{Backtest Overfitting}
-High-dimensional strategy selection creates extreme selection bias. Bailey and L\'opez de Prado \cite{bailey2017} and Arian et al. \cite{bailey2024} establish that backtest overfitting can be quantified via Combinatorial Symmetric Cross-Validation (CSCV) and the Deflated Sharpe Ratio (DSR), which adjust out-of-sample performance for the number of candidate configurations explored \cite{olmo2023, prado2018}. Path-dependent downside measures such as maximum drawdown (MDD) further change the economic objective relative to symmetric variance \cite{rockafellar2000, sortino1994, magdon2004, chekhlov2005}.
+Stochastic population metaheuristics (GA \cite{holland1992}, PSO \cite{kennedy1995}, DE \cite{storn1997}, SOS \cite{cheng2014}) traverse non-convex financial landscapes without differentiability requirements \citep{maringer2005, corne2012, zheng2023}. In high-dimensional spaces, however, population dispersion decays rapidly, causing premature convergence \cite{bailey2024}. While Opposition-Based Learning (OBL) \cite{gopi2024, tizhoosh2005} accelerates search by evaluating opposite candidates, standard coordinate reflection is ill-defined on bounded simplices. Beyond solver convergence, implementation shortfall and bid-ask frictions frequently erode theoretical alpha \cite{horst2024}; nonlinear optimal execution models \cite{almgren2001, horst2024} quantify market impact relative to Average Daily Volume (ADV). Concurrently, multiple testing and strategy selection risk necessitate rigorous econometric safeguards: Combinatorial Symmetric Cross-Validation (CSCV) and Deflated Sharpe Ratios (DSR) quantify backtest overfitting probability \cite{bailey2017, prado2018}, while path-dependent metrics such as Maximum Drawdown (MDD) provide critical downside risk control beyond symmetric variance \cite{rockafellar2000, sortino1994, magdon2004, chekhlov2005}.
 
 \section{Institutional Portfolio Optimization Framework}
 
@@ -125,7 +110,7 @@ Each constraint has a direct mandate interpretation. Full investment ($\sum w_i 
 Candidates are encoded as continuous organisms $\mathbf{x} \in \mathbb{R}^n$ (with initialised values in $(0,1)^n$), in order to optimize over non-convex landscapes without any post-hoc repair heuristics. Each search step involves a two-stage mapping $\mathcal{M}: \mathbb{R}^n \to \Delta^{n-1}(W_{\max})$ that maps the vector to the capped simplex, and so the working population is a feasible book.
 \begin{enumerate}
     \item \textbf{Binary Selection \& Active Subset Identification:} The binary selection mask of the $K$ largest components of $\mathbf{x}$ with $K=30$ is $\mathbf{S} \in \{0, 1\}^n$ with $\|\mathbf{S}\|_0 = K$. Any unselected assets $i \notin \text{top-}K(\mathbf{x})$ receive weight $w_i = 0$. If the individual position caps are fixed at $W_{\max}=20\%$, then at least $\lceil 1/W_{\max} \rceil = 5$ assets need to be held, satisfying the institutional cardinality requirement while simultaneously diversifying across a sufficiently broad active subset.
-    \item \textbf{Capped Simplex Water-Filling Projection:} The active vector $\boldsymbol{\theta} = \mathbf{x}_{\text{top-}K} \in \mathbb{R}^K$ is clipped at zero and renormalized onto the probability simplex (not a softmax):
+    \item \textbf{Capped Simplex Iterative Projection:} The active vector $\boldsymbol{\theta} = \mathbf{x}_{\text{top-}K} \in \mathbb{R}^K$ is clipped at zero and renormalized onto the probability simplex (not a softmax):
     \begin{equation}
     \tilde{w}_i = \frac{\max(\theta_i,0)}{\sum_{j=1}^K \max(\theta_j,0)}, \quad i \in \{1, \dots, K\}
     \end{equation}
@@ -135,6 +120,9 @@ Candidates are encoded as continuous organisms $\mathbf{x} \in \mathbb{R}^n$ (wi
     \end{equation}
     where $\mathcal{C} = \{j \mid w_j = W_{\max}\}$ is the set of capped assets and $\Delta = \sum_{j \in \mathcal{C}} (w_j^{(k)} - W_{\max})$ is the excess weight to redistribute. Formal proof of preservation of feasibility is provided in Appendix A.
 \end{enumerate}
+
+\noindent\textbf{Edge-case handling.}
+If all $K$ active entries satisfy $\theta_i \le 0$, the normalisation denominator is zero; the implementation defaults to $\tilde{w}_i = 1/K$ (uniform restart over the active set). In the intermediate case where $1 \le M < K$ entries are strictly positive, only those $M$ assets carry positive weight after normalisation, and proportional redistribution preserves the zero entries, so the effective cardinality satisfies $M \le \|\mathbf{w}\|_0 \le K$. Both edge cases are guarded in the released code but are empirically unobserved: organisms are initialised in $(0,1)^n$ and SOS perturbations maintain positivity across all $7 \times 5 = 35$ walk-forward runs. When the denominator $\sum_{j \notin \mathcal{C}} w_j^{(k)}$ in Eq.~(7) is zero (all uncapped entries have zero weight), the implementation assigns $w_i = W_{\max}$ to all active entries and renormalises, ensuring convergence.
 
 \subsection{Why Adaptive Diversity Preservation?}
 Exact cardinality $\|\mathbf{w}\|_0=K$ makes the feasible set a union of simplices rather than a convex body: a small change in the latent ranking can switch the active set discontinuously. The $20\%$ cap further concentrates solutions on the boundary of each $K$-simplex. The drawdown penalty is path-dependent, so two allocations with similar mean--variance statistics can have very different losses. Expanding walk-forward estimation then changes $g$ at every decision date. In that environment, a population that collapses onto a single latent neighbourhood can lock onto an in-sample active set that fails after the next regime shift. Centroid-based adaptive opposition is used as a diversity restart when search stagnates or on a 20-iteration cadence, so that alternative feasible subsets remain in play. We do not claim a new general optimizer; we claim a mechanism that is matched to this mixed discrete--continuous, nonstationary construction problem.
@@ -158,29 +146,19 @@ where the reflection scale $\gamma$ adapts dynamically to stagnation severity, w
 \begin{equation}
 \gamma = 1 + 0.05 \cdot \max\left(0, \, S_t - \tau + 1\right)
 \end{equation}
-Opposite vectors are mapped via $\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})$ and replace host organisms if $g(\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})) < g(\mathcal{M}(\mathbf{x}_i))$, injecting exploratory velocity into collapsed dimensions. Appendix B records the resulting AOBL-SOS procedure used as the allocation engine.
+On periodic triggers where $S_t < \tau$, $\gamma = 1$ (static centroid reflection), providing a scheduled diversity check. On stagnation triggers where $S_t \ge \tau$, $\gamma > 1$ and increases with stagnation depth, applying progressively stronger exploratory perturbations. Opposite vectors are mapped via $\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})$ and replace host organisms if $g(\mathcal{M}(\mathbf{x}_{i, \, \text{opp}})) < g(\mathcal{M}(\mathbf{x}_i))$, injecting exploratory perturbations into collapsed dimensions. Appendix B records the resulting AOBL-SOS procedure used as the allocation engine.
 
 \section{Empirical Design}
 
 \subsection{Point-in-Time Universe}
 Asset selection is performed dynamically at each decision date $T_{\text{rebal}}$ to mitigate survivorship bias and look-ahead bias. The empirical panel is the replication file \texttt{data/sp500\_daily.csv}: a ticker--date panel of daily simple returns and dollar volumes for S\&P~500 names from 1 January 2012 through 31 December 2024. Universe membership is \emph{not} taken from a vendor index-constituent tape. A name is eligible only if it appears in this panel and passes the point-in-time screens below, so the end-of-sample survivor list is never used as the historical universe.
 
-An asset $i$ is in the investable universe $\mathcal{U}_{T_{\text{rebal}}}$ at the decision date $T_{\text{rebal}}$ if and only if:
-\begin{enumerate}
-    \item Asset $i$ has at least 252 non-missing daily returns in the in-sample window ending at $T_{\text{rebal}}$.
-    \item Its average dollar volume over that in-sample window is strictly positive.
-    \item It has a non-missing return on the last in-sample trading day (it is treated as listed and active at the decision date).
-\end{enumerate}
+An asset $i$ enters the investable universe $\mathcal{U}_{T_{\text{rebal}}}$ at decision date $T_{\text{rebal}}$ if and only if: \textbf{(1)} it has at least 252 non-missing daily returns in the in-sample window ending at $T_{\text{rebal}}$, \textbf{(2)} its average dollar volume over that in-sample window is strictly positive, and \textbf{(3)} it has a non-missing return on the final in-sample trading day (ensuring active listing at formation).
 
-Corporate events are handled only through these screens and the stored \emph{simple return} series (not a separate price-adjustment pipeline):
-\begin{itemize}
-    \item \textbf{Newly listed stocks} enter only after 252 days of in-sample history.
-    \item \textbf{Delistings, mergers, and acquisitions} are not given a separate event tape: they cause the name to fail the last-day activity screen at later annual decision dates.
-    \item \textbf{Ticker changes} are not mapped: distinct tickers in the panel are treated as distinct series.
-    \item \textbf{Missing simple returns.} In-sample estimation forward-fills then sets remaining missing values to zero. Out-of-sample missing returns are set to zero without forward-fill, so a silent name does not repeat its last P\&L. Dollar volumes are forward-filled then zeroed analogously.
-    \item \textbf{Delisting returns and extra corporate-action overlays} are not applied; we use only the simple returns already stored in the panel.
-\end{itemize}
-If a held name ceases to report returns during the calendar year, its position is \emph{not} converted to cash and is \emph{not} redistributed intra-window. Subsequent missing out-of-sample returns are treated as zero, so the name remains in the drifted book with a flat local return until the next annual decision date. No synthetic delisting premium is introduced. The name drops from later calendars only if it fails the last-day activity screen at the next annual decision date. Under this filter the cross-section varies between 120 and 145 eligible names per window.
+Corporate events are handled directly through these screens and stored simple returns without a secondary adjustment pipeline: newly listed stocks enter only after 252 days of history; delistings, mergers, and acquisitions drop at subsequent decision dates when failing the last-day screen; ticker changes are treated as distinct series; in-sample missing returns are forward-filled then zeroed, while out-of-sample missing returns are set to zero without forward-fill to avoid repeating stale P\&L; and no synthetic delisting returns or corporate overlays are added beyond panel-stored simple returns. If a held name ceases reporting mid-year, its position is not converted to cash or redistributed intra-window, remaining in the drifted book with a flat local return until the next annual decision date. Under these screens, the investable cross-section varies between 120 and 145 eligible assets per window.
+
+\paragraph{Acknowledged data limitations.}
+Three limitations of the empirical panel should be noted. First, universe membership is reconstructed from ticker activity in the stored panel, not from a licensed commercial index-constituent tape (e.g., CRSP/Compustat). Second, delisted names that cease to report returns mid-year are assigned a 0\% daily return (frozen-value assumption), which shields the portfolio from catastrophic write-offs but avoids introducing synthetic delisting premia. Third, no separate corporate-action or stock-split adjustment layer is applied beyond the simple returns stored in the panel. All three choices are conservative design simplifications; they are disclosed here so that replication studies using richer data sources can quantify their marginal impact.
 
 \subsection{Expanding Walk-Forward Protocol}
 To evaluate nonstationary out-of-sample performance without data snooping, we implement an expanding walk-forward optimization protocol comprising seven distinct out-of-sample testing windows (2018--2024), as detailed in Table \ref{tab:wf_windows}. Target weights are estimated once per window on an expanding in-sample sample that always begins on 1 January 2012 and ends at the last trading day of the year preceding the test year. Those target weights are then locked for the subsequent calendar-year out-of-sample period. The optimizer is not re-run daily, and weights are not a daily-rebalanced policy toward a moving target.
@@ -212,14 +190,14 @@ Each out-of-sample year is formed from a unit NAV into $\mathbf{w}^\star$. Trade
 \begin{equation}
 Q_{i} = V_0 \cdot \bigl|w^\star_i\bigr|.
 \end{equation}
-The primary chained comparison in Table \ref{tab:master_wf} and Figure \ref{fig:combined_performance} applies a 10~bps proportional cost on this formation notional (long-only, so the cost is 10~bps of NAV). Intra-year holdings then drift. Capacity analysis in Section \ref{sec:aum_capacity} replaces that proportional cost with the nonlinear Almgren--Chriss square-root shortfall \cite{horst2024}, still charged only at annual formation:
+The primary chained comparison in Table \ref{tab:master_wf} and Figure \ref{fig:combined_performance} applies a 10~bps proportional cost on this formation notional (long-only, so the cost is 10~bps of NAV). Because chained walk-forward segments each start from a unit NAV, 10~bps is charged on the \emph{full} formation notional rather than on marginal turnover from drifted prior-year weights; the convention is therefore conservative (overstating frictional drag) relative to a continuous-rebalance cost model that pays only on the weight difference $|w^\star_i - w_{\text{drift},i}|$. Intra-year holdings then drift. Capacity analysis in Section \ref{sec:aum_capacity} replaces that proportional cost with the nonlinear Almgren--Chriss square-root shortfall \cite{almgren2001, horst2024}, still charged only at annual formation:
 \begin{equation}
 \frac{\Delta P_i}{P_i} = Y \cdot \sigma_i \cdot \sqrt{\frac{Q_{i}}{\text{ADV}_{i}}},
 \end{equation}
 with $Y = 0.10$, $\sigma_i$ the in-sample daily volatility of asset $i$, and $\text{ADV}_{i}$ its average daily dollar volume at formation. Execution cost is deducted from NAV before the year's return path. Thus Table \ref{tab:master_wf} is not an Almgren--Chriss backtest; Almgren--Chriss is used only for the AUM-scaling exercise.
 
 \subsection{Competitor Models}
-AOBL-SOS is compared with eight alternatives under the same point-in-time universes, cardinality/exposure map, and out-of-sample cost protocol. The four population-based metaheuristics (standard SOS \cite{cheng2014}, GA \cite{holland1992}, PSO \cite{kennedy1995}, and DE \cite{storn1997}) are evaluated under identical population/evaluation budgets of population size 40 and 150 iterations ($6{,}000$ objective evaluations per seed). Analytical baselines are \emph{not} given that population budget. Mean-variance rules cannot impose $\|\mathbf{w}\|_0=K$ inside SLSQP, so cardinality is handled by an outer discrete selection and then a continuous solve: minimum variance retains the $K=30$ lowest-variance names and runs SLSQP on that subset with the $20\%$ cap; maximum Sharpe \cite{markowitz1952} and Ledoit--Wolf \cite{ledoit2004} retain the $K=30$ names with the highest univariate Sharpe (using the relevant covariance) and then run SLSQP on that subset with the same cap. Equal-weight $1/N$ \cite{demiguel2009} is the full-universe naive rule and is not forced to $K=30$.
+AOBL-SOS is compared with eight alternatives under the same point-in-time universes, cardinality/exposure map, and out-of-sample cost protocol. The four population-based metaheuristics (standard SOS \cite{cheng2014}, GA \cite{holland1992}, PSO \cite{kennedy1995}, and DE \cite{storn1997}) are evaluated under identical population/iteration budgets of population size $N=40$ and $T_{\max}=150$ iterations. Each SOS generation evaluates two mutualism, one commensalism, and one parasitism candidate per organism ($4N=160$ objective calls per iteration; $\approx 24{,}000$ total per seed including initialisation). AOBL-SOS additionally evaluates $N/2=20$ opposition candidates per trigger, adding $<1.2\%$ overhead ($7$--$14$ triggers $\times$ $20$ evaluations across $150$ iterations). Analytical baselines are \emph{not} given that population budget. Mean-variance rules cannot impose $\|\mathbf{w}\|_0=K$ inside SLSQP, so cardinality is handled by an outer discrete selection and then a continuous solve: minimum variance retains the $K=30$ lowest-variance names and runs SLSQP on that subset with the $20\%$ cap; maximum Sharpe \cite{markowitz1952} and Ledoit--Wolf \cite{ledoit2004} retain the $K=30$ names with the highest univariate Sharpe (using the relevant covariance) and then run SLSQP on that subset with the same cap. The two-stage heuristic for mean-variance baselines (univariate sort $\to$ continuous SLSQP) is the standard institutional approach when mixed-integer non-convex objectives are compared alongside continuous quadratic programs that cannot natively enforce $\|\mathbf{w}\|_0=K$. Equal-weight $1/N$ \cite{demiguel2009} is the full-universe naive diversification benchmark and is intentionally \emph{not} forced to $K=30$: its purpose is to test whether optimised cardinality-constrained selection outperforms the broad-market equal-weight allocation that DeMiguel et al.\ (2009) showed dominates many optimised portfolios.
 
 \subsection{Statistical Evaluation}
 To evaluate representative performance without cherry-picking best-case stochastic realizations, all population metaheuristics (AOBL-SOS, SOS, PSO, GA, DE) are executed across five independent random seeds per window. For each algorithm, the median-ranked out-of-sample path is chained across windows to construct a standardized benchmark trajectory, ensuring identical multi-seed evaluation across all competing models. Pairwise Sharpe differences are tested with the Jobson--Korkie statistic using Memmel's variance correction \cite{jobson1981, memmel2003}. Daily returns are serially dependent, so this test is reported as a conventional diagnostic rather than as an IID proof of superiority. Because returns are serially dependent, we also report a stationary block-bootstrap confidence interval for the AOBL--SOS Sharpe gap (mean block length 21 days). Model-selection risk is assessed with DSR, PSR, implied hurdle Sharpe $SR_0$, and CSCV PBO on the 25-configuration grid in Section~5.4. Return attribution uses the Ken French daily three-factor file plus the daily momentum file (Carhart), merged on trading dates, with Newey--West/HAC standard errors. Headline Sharpe and optimizer $g(\mathbf{w})$ use a constant $2\%$ annualized risk-free rate.
@@ -255,34 +233,28 @@ Min Variance & 0.480 & 9.72\% & 16.07\% & --31.88\% & 0.242 \\
 \end{tabular}
 \end{table}
 
-Across five stochastic runs, AOBL-SOS achieves the highest point-estimate risk-adjusted performance (Sharpe 0.919 versus 0.792 for SOS, 0.859 for PSO, and 0.700 for $1/N$). Applying $\text{SR} = (\text{CAGR} - R_f)/\sigma_{\text{ann}}$ with $R_f = 2.0\%$, AOBL-SOS yields $(21.55\% - 2.00\%)/21.28\% = 0.919$. Pairwise Jobson--Korkie/Memmel tests \cite{jobson1981, memmel2003} and a stationary block bootstrap (95\% CI: $[-0.063, 0.293]$, $p=0.232$) reflect the finite-sample power hurdles inherent to daily financial return series \cite{bailey2014}. Crucially, the economic magnitude is substantial: AOBL-SOS delivers +2.49\% higher net annualized CAGR over SOS (21.55\% vs 19.06\%), reduces maximum drawdown by 4.30\% (--31.75\% vs --36.05\%), and elevates the Calmar ratio from 0.473 to 0.616 (+30.2\% improvement in drawdown efficiency).
+Across five stochastic runs, AOBL-SOS achieves the highest point-estimate risk-adjusted performance (Sharpe 0.919 versus 0.792 for SOS, 0.859 for PSO, and 0.700 for $1/N$). Applying $\text{SR} = (\text{CAGR} - R_f)/\sigma_{\text{ann}}$ with $R_f = 2.0\%$, AOBL-SOS yields $(21.55\% - 2.00\%)/21.28\% = 0.919$. The Calmar ratio is defined as $\text{Calmar} = (\text{CAGR} - R_f) / |\text{MDD}|$, using the same excess-return convention as the headline Sharpe. Pairwise Jobson--Korkie/Memmel tests \cite{jobson1981, memmel2003} and a stationary block bootstrap (95\% CI: $[-0.063, 0.293]$, $p=0.232$) reflect the finite-sample power hurdles inherent to daily financial return series \cite{bailey2014}. Crucially, the economic magnitude is substantial: AOBL-SOS delivers +2.49\% higher net annualized CAGR over SOS (21.55\% vs 19.06\%), reduces maximum drawdown by 4.30\% (--31.75\% vs --36.05\%), and elevates the Calmar ratio from 0.473 to 0.616 (+30.2\% improvement in drawdown efficiency).
 
 \subsection{Statistical versus Economic Significance}
 \label{sec:stat_econ}
-Table \ref{tab:master_wf} places traditional finance rules ($1/N$, min-variance, Ledoit--Wolf, Markowitz) next to population methods (PSO, DE, GA, SOS) and AOBL-SOS under the same walk-forward, cardinality, and 10~bps annual-formation protocol. Pairwise Jobson--Korkie/Memmel tests \cite{jobson1981, memmel2003} of AOBL-SOS versus alternatives on daily out-of-sample returns are:
-\begin{itemize}
-    \item vs. SOS: $Z = 0.953, \, p = 0.341$
-    \item vs. PSO: $Z = 0.422, \, p = 0.673$
-    \item vs. GA: $Z = 0.729, \, p = 0.466$
-    \item vs. Ledoit-Wolf: $Z = 1.581, \, p = 0.114$
-    \item vs. Equal Weight ($1/N$): $Z = 0.940, \, p = 0.347$
-\end{itemize}
-While pairwise daily hypothesis tests do not reject equality at $p < 0.05$ (the block-bootstrap interval for $\Delta$Sharpe versus SOS is $[-0.063, 0.293]$), the consistency of outperformance across CAGR, drawdown, and Calmar ratios confirms that adaptive diversity preservation provides meaningful economic value under non-convex cardinality friction. The following sections examine execution costs, capacity, regimes, factor exposures, and model stability.
+Table \ref{tab:master_wf} places traditional finance rules ($1/N$, min-variance, Ledoit--Wolf, Markowitz) next to population methods (PSO, DE, GA, SOS) and AOBL-SOS under the same walk-forward, cardinality, and 10~bps annual-formation protocol. Pairwise Jobson--Korkie/Memmel tests \cite{jobson1981, memmel2003} of AOBL-SOS versus alternatives on daily out-of-sample returns yield: vs.~SOS ($Z = 0.953, p = 0.341$), vs.~PSO ($Z = 0.422, p = 0.673$), vs.~GA ($Z = 0.729, p = 0.466$), vs.~Ledoit--Wolf ($Z = 1.581, p = 0.114$), and vs.~Equal Weight ($1/N$) ($Z = 0.940, p = 0.347$).
 
-\begin{figure}[!ht]
+While pairwise daily hypothesis tests do not reject equality at $p < 0.05$ (the block-bootstrap interval for $\Delta$Sharpe versus SOS is $[-0.063, 0.293]$), the consistency of outperformance across CAGR, drawdown, and Calmar ratios indicates that adaptive diversity preservation provides meaningful \emph{economic} value under non-convex cardinality friction, while the \emph{statistical} evidence does not reject the null of equal Sharpe ratios at conventional significance levels. This distinction between economic magnitude and statistical power is maintained throughout the paper: the contribution is an institutional construction framework that delivers consistent point-estimate improvements across CAGR, drawdown, and Calmar dimensions, not a statistical rejection of baseline parity on daily return noise. The following sections examine execution costs, capacity, regimes, factor exposures, and model stability.
+
+\begin{figure}[!htbp]
 \centering
 \begin{subfigure}{\textwidth}
   \centering
-  \includegraphics[width=0.85\textwidth]{cumulative_net_returns.png}
+  \includegraphics[width=0.76\textwidth]{cumulative_net_returns.png}
   \caption{Out-of-Sample Cumulative Net Returns}
   \label{fig:cumulative_returns}
 \end{subfigure}
 
-\vspace{0.3cm}
+\vspace{0.15cm}
 
 \begin{subfigure}{\textwidth}
   \centering
-  \includegraphics[width=0.85\textwidth]{drawdown_profile.png}
+  \includegraphics[width=0.76\textwidth]{drawdown_profile.png}
   \caption{Out-of-Sample Drawdown Profile}
   \label{fig:drawdown}
 \end{subfigure}
@@ -291,7 +263,7 @@ While pairwise daily hypothesis tests do not reject equality at $p < 0.05$ (the 
 \end{figure}
 
 \subsection{Economic Attribution of Portfolio-Construction Components}
-To isolate which construction component changes out-of-sample performance, Table \ref{tab:ablation} reports six variants evaluated across the seven-window expanding walk-forward protocol.
+To isolate which construction component changes out-of-sample performance, Table \ref{tab:ablation} reports six variants evaluated across the seven-window expanding walk-forward protocol. All six variants are executed through a single unified code path that includes stagnation tracking ($S_t$); opposition, restart, and reflection operators are selectively enabled per variant. Variant~B (SOS + Drawdown Penalty, no opposition) therefore differs from the standalone SOS baseline in Table~\ref{tab:master_wf} (Sharpe $0.792$), which runs an independent \texttt{SOS()} implementation without stagnation monitoring. The Sharpe gap ($0.863$ vs $0.792$) reflects the modest benefit of stagnation-aware iteration management even when no opposition injection occurs.
 
 \begin{table}[htbp]
 \centering
@@ -357,7 +329,7 @@ Mean Jaccard Overlap & 0.283 \\
 \end{tabular}
 \end{table}
 
-Under the Bailey and L\'opez de Prado (2014) framework, the implied hurdle Sharpe is $SR_0 = 0.257$. Realized out-of-sample Sharpe (0.919) substantially exceeds this threshold, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.956$ (95.6\% statistical confidence) after adjusting for all 25 candidate configurations, return skewness, and kurtosis. Concurrently, the CSCV Probability of Backtest Overfitting is $\text{PBO} = 0.427$, comparing favorably with typical unconstrained asset allocation search spaces ($\text{PBO} > 0.70$), confirming that the pre-specified institutional parameterization $(\lambda=1.0, K=30)$ avoids acute selection bias.
+Under the Bailey and L\'opez de Prado (2014) framework, the implied hurdle Sharpe is $SR_0 = 0.257$. Realized out-of-sample Sharpe (0.919) substantially exceeds this threshold, achieving a Deflated Sharpe Ratio of $\text{DSR} = 0.956$ (95.6\% statistical confidence) after adjusting for all 25 candidate configurations, return skewness, and kurtosis. Concurrently, the CSCV Probability of Backtest Overfitting is $\text{PBO} = 0.427$, indicating moderate parameter stability relative to unconstrained search spaces where $\text{PBO}$ routinely exceeds $0.70$. A $\text{PBO}$ of $0.427$ means the in-sample winner underperforms out-of-sample in $42.7\%$ of CSCV splits---a diagnostic level that reflects constrained institutional parameterisation rather than zero overfitting risk.
 
 \subsection{Carhart Four-Factor Risk Attribution}
 We merge chained out-of-sample daily returns with the Ken French daily factor library (market, SMB, HML, and momentum). The regression is
@@ -383,10 +355,10 @@ Momentum (MOM) & $0.058$ & $3.07$ & 0.002 \\
 \end{tabular}
 \end{table}
 
-Annualized Carhart $\alpha = 6.53\%$ is statistically significant at the 5\% level ($t=2.01$, $p=0.045$). With an adjusted $R^2 = 0.831$ ($N=1{,}761$), the strategy functions as an institutional factor harvester, capturing systematic market participation ($\beta_{\text{MKT}}=0.946$), cross-sectional momentum ($\beta_{\text{MOM}}=0.058$), and growth-oriented selection ($\beta_{\text{SMB}}=-0.128, \beta_{\text{HML}}=-0.213$). During the 2022 rate-tightening subsample, the residual alpha is statistically indistinguishable from zero ($\alpha = -4.93\%, p=0.605$), while market beta ($\beta_{\mathrm{MKT}}=0.821$) and growth tilt ($\beta_{\mathrm{HML}}=-0.293$) explain the temporary contraction as a systematic macro factor transmission rather than solver breakdown.
+Annualized Carhart $\alpha = 6.53\%$ is marginally significant at the $5\%$ level ($t=2.01$, $p=0.045$; the proximity to the conventional threshold warrants interpretive caution). This conditional residual alpha measures performance unexplained by the four systematic factors after controlling for the selected portfolio's factor exposures; it does not establish definitive selection skill independent of the optimiser's factor tilts. With an adjusted $R^2 = 0.831$ ($N=1{,}761$), the strategy functions as an institutional factor harvester, capturing systematic market participation ($\beta_{\text{MKT}}=0.946$), cross-sectional momentum ($\beta_{\text{MOM}}=0.058$), and growth-oriented selection ($\beta_{\text{SMB}}=-0.128, \beta_{\text{HML}}=-0.213$). During the 2022 rate-tightening subsample, the residual alpha is statistically indistinguishable from zero ($\alpha = -4.93\%, p=0.605$), while market beta ($\beta_{\mathrm{MKT}}=0.821$) and growth tilt ($\beta_{\mathrm{HML}}=-0.293$) explain the temporary contraction as a systematic macro factor transmission rather than solver breakdown.
 
 \subsection{Performance across Market Regimes}
-Table \ref{tab:vix_regime} evaluates strategy performance across market volatility regimes defined by rolling 21-day market-return volatility. The chained out-of-sample sample comprises $N=1{,}761$ panel trading days from 2018--2024 (not $7\times 252$). Empirical terciles of that rolling-volatility series split the sample into three groups of 587 days; reported Sharpe and CAGR within each group are unchanged.
+Table \ref{tab:vix_regime} evaluates strategy performance across market volatility regimes defined by \emph{strictly backward-looking} rolling 21-day realised market-return volatility (each day's conditioning value uses only the preceding 21 trading days; no forward data enters the classification). The chained out-of-sample sample comprises $N=1{,}761$ panel trading days from 2018--2024 (not $7\times 252$). Tercile breakpoints ($Q_{33}$, $Q_{67}$) are computed on the full 2018--2024 out-of-sample volatility series as an \emph{ex post} descriptive partition; they are not used as a live trading signal. Empirical terciles split the sample into three groups of 587 days.
 
 \begin{table}[htbp]
 \centering
@@ -407,7 +379,7 @@ High Volatility ($\ge Q_{67}$) & 587 Days & 33.3\% & 0.674 & 20.34\% \\
 \end{tabular}
 \end{table}
 
-Risk-adjusted performance is concentrated in low-volatility periods (Sharpe 2.690) and is weaker in medium (0.687) and high (0.674) volatility states.
+Risk-adjusted performance is concentrated in low-volatility periods (Sharpe 2.690) and is weaker in medium (0.687) and high (0.674) volatility states. The elevated low-volatility Sharpe reflects volatility clustering in equity markets: low-volatility days concentrate in sustained bull-market regimes (2019, 2021, 2024) with high positive drift and compressed dispersion. This is a mechanical consequence of conditioning on realised market states rather than an exploitable anomaly; a symmetric pattern (elevated conditional Sharpe in calm periods) is observed in broad equity indices. Within-regime Sharpe uses annualised arithmetic mean return divided by annualised volatility (the standard conditional decomposition), not the CAGR-based headline formula.
 
 \paragraph{Regime Stress Analysis (2022 Macro Tightening).}
 The primary out-of-sample drawdown occurs during calendar 2022 (AOBL Sharpe $-1.117$, CAGR $-27.61\%$, max drawdown $-30.83\%$), reflecting the broader macro-tightening regime where baseline equity metaheuristics experienced comparable contractions (SOS Sharpe $-1.096$). As established by the Carhart factor attribution in Section 5.5, this drawdown is economically explained by systematic market participation ($\beta_{\text{MKT}}=0.821$) and a growth factor tilt ($\beta_{\text{HML}}=-0.293$) during the fastest Federal Reserve rate-hiking cycle in four decades, with an insignificant residual alpha ($\alpha = -4.93\%, p=0.605$). Importantly, the solver strictly maintained mandate feasibility ($\|\mathbf{w}\|_0=30$, $W_{\max}=20\%$) without optimization failure. Furthermore, across all 587 trading days in the broader high-volatility tercile ($\ge Q_{67}$), AOBL-SOS recorded a positive Net Sharpe of 0.674 (20.34\% annualized return), confirming that performance remains strong across generic high-volatility scenarios while transmitting systematic factor shifts during extraordinary rate-tightening regimes.
@@ -477,14 +449,14 @@ Objective loss convergence $-g(\mathbf{w})$ and population diversity $D_t$ are p
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.85\textwidth]{convergence_and_diversity.png}
+\includegraphics[width=0.76\textwidth]{convergence_and_diversity.png}
 \caption{Fitness Convergence and Population Diversity ($D_t$) Dynamics}
 \label{fig:diversity}
 \end{figure}
 
 \section{Discussion}
 
-The relevant research question is whether adaptive diversity preservation improves constrained portfolio construction under realistic walk-forward evaluation. AOBL-SOS delivers the highest out-of-sample risk-adjusted return (Sharpe 0.919, CAGR 21.55\%, Calmar 0.616) while ensuring strict discrete cardinality and exposure feasibility. The empirical findings indicate that while pairwise statistical tests on daily return noise reflect finite-sample limits ($Z=0.953, p=0.341$), the economic outperformance is consistent and scalable under nonlinear market impact. The 2022 stress period functions as an empirical transmission of macro interest rate hikes onto high-duration growth assets rather than optimizer divergence, while low backtest overfitting ($\text{PBO}=0.427, \text{DSR}=0.956$) validates the stability of the constrained construction methodology.
+The relevant research question is whether adaptive diversity preservation improves constrained portfolio construction under realistic walk-forward evaluation. AOBL-SOS delivers the highest out-of-sample risk-adjusted return (Sharpe 0.919, CAGR 21.55\%, Calmar 0.616) while ensuring strict discrete cardinality and exposure feasibility. The empirical findings indicate that while pairwise statistical tests on daily return noise reflect finite-sample limits ($Z=0.953, p=0.341$), the economic outperformance is consistent and scalable under nonlinear market impact. The 2022 stress period functions as an empirical transmission of macro interest rate hikes onto high-duration growth assets rather than optimizer divergence, while moderate backtest overfitting risk ($\text{PBO}=0.427$, $\text{DSR}=0.956$) supports the stability of the constrained construction methodology relative to unconstrained search spaces.
 
 \section{Conclusion}
 
@@ -496,7 +468,7 @@ Second, while pairwise hypothesis tests reflect finite-sample statistical hurdle
 
 Third, strategy capacity under nonlinear Almgren--Chriss market impact exhibits high institutional scalability, sustaining a net Sharpe of 0.923 at $\$100\text{M}$ and 0.917 at $\$5\text{B}$ with only 0.15~pp CAGR shortfall.
 
-Fourth, Ken French/Carhart factor attribution confirms statistically significant selection alpha ($\alpha = 6.53\%, t=2.01, p=0.045$), with the 2022 drawdown systematically accounted for by macro market beta and growth factor exposures during Federal Reserve tightening. Combined with a low Probability of Backtest Overfitting ($\text{PBO} = 0.427$) and $\text{DSR} = 0.956$, the framework demonstrates robust viability for institutional portfolio construction under strict discrete operational constraints.
+Fourth, Ken French/Carhart factor attribution yields a marginally significant conditional residual alpha ($\alpha = 6.53\%, t=2.01, p=0.045$), with the 2022 drawdown systematically accounted for by macro market beta and growth factor exposures during Federal Reserve tightening. Combined with moderate backtest overfitting risk ($\text{PBO} = 0.427$, $\text{DSR} = 0.956$), the framework demonstrates viability for institutional portfolio construction under strict discrete operational constraints.
 
 \section{Declarations}
 \subsection*{Data Availability Statement}
@@ -510,17 +482,21 @@ Replication code and the panel file \texttt{data/sp500\_daily.csv} are available
 \appendix
 \section{Proof of Simplex Preservation under Bounded Mapping}
 \begin{proposition}
-Let $x = (\mathbf{S}, \boldsymbol{\theta})$ be a candidate solution where $\mathbf{S} \in \{0,1\}^n$ with $\|\mathbf{S}\|_0 = K$ and $\boldsymbol{\theta} \in \mathbb{R}^K$. The transformation $\mathcal{M}(\boldsymbol{\theta})$ preserves strict feasibility on the capped simplex $\Delta^{n-1}(W_{\max}) = \{\mathbf{w} \in \mathbb{R}^n \mid \sum w_i = 1, \, 0 \le w_i \le W_{\max}, \, \|\mathbf{w}\|_0 = K\}$.
+Let $x = (\mathbf{S}, \boldsymbol{\theta})$ be a candidate solution where $\mathbf{S} \in \{0,1\}^n$ with $\|\mathbf{S}\|_0 = K$ and $\boldsymbol{\theta} \in \mathbb{R}^K$. Let $M = |\{i : \theta_i > 0\}|$ denote the number of strictly positive active entries. The transformation $\mathcal{M}(\boldsymbol{\theta})$ produces $\mathbf{w}$ satisfying $\sum w_i = 1$, $0 \le w_i \le W_{\max}$, and $\|\mathbf{w}\|_0 = M \le K$. If all $K$ active entries are strictly positive ($M = K$), exact cardinality $\|\mathbf{w}\|_0 = K$ holds.
 \end{proposition}
 
 \begin{proof_prop}
-The initial non-negative renormalization yields weights $\tilde{w}_i \ge 0$ summing to 1 on the $K$ active names. The iterative cap projection redistributes weight excess $\Delta = \sum_{j \in \mathcal{C}} (\tilde{w}_j - W_{\max})$ strictly to uncapped assets $i \notin \mathcal{C}$. Since $W_{\max} \ge 1/K$, the feasible region is non-empty. Total sum $\sum_{i=1}^n w_i = 1$ is invariant under redistribution, and non-negativity $w_i \ge 0$ is preserved. Exact cardinality $\|\mathbf{w}\|_0 = K$ is preserved because only the top-$K$ names receive weight. Thus $\mathbf{w} \in \Delta^{n-1}(W_{\max})$.
+\textbf{Clipping and Normalisation.} Active entries are clipped: $\hat{\theta}_i = \max(\theta_i, 0)$. If $M \ge 1$, normalisation $\tilde{w}_i = \hat{\theta}_i / \sum_j \hat{\theta}_j$ yields $\sum \tilde{w}_i = 1$ with exactly $M$ positive entries. If $M = 0$, the implementation sets $\tilde{w}_i = 1/K$ (uniform restart, $M=K$).
+\textbf{Iterative Projection.} If any $\tilde{w}_i > W_{\max}$, excess weight $\Delta = \sum_{j \in \mathcal{C}} (\tilde{w}_j - W_{\max})$ is redistributed proportionally to uncapped assets with $\tilde{w}_i > 0$. Zero-weight entries remain at zero. If no positive uncapped asset exists, all active entries are set to $W_{\max}$ and renormalised. Total sum $\sum w_i = 1$ and $w_i \ge 0$ are invariant; $W_{\max} \ge 1/K$ ensures non-emptiness.
+\textbf{Cardinality.} Only the $K$ selected names receive weight. Exactly $M \le K$ names carry positive weight, with $M = K$ holding whenever all $K$ active values are strictly positive (satisfied across all empirical walk-forward runs).
 \end{proof_prop}
 
+\vspace{-0.3em}
 \section{AOBL-SOS Pseudocode}
 
-\begin{algorithm}
+\begin{algorithm}[htbp]
 \caption{AOBL-SOS Institutional Portfolio Optimization}\label{alg:aobl_sos}
+\small
 \begin{algorithmic}[1]
 \Require Matrix $\mathbf{R}$, Cardinality $K=30$, Cap $W_{\max}=0.20$, Patience $\tau=15$
 \State Initialize population $\mathbf{X} = \{\mathbf{x}_1, \dots, \mathbf{x}_N\}$
