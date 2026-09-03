@@ -55,7 +55,9 @@ Funding & Competing Interests
 
 Data & Code Availability Statement
 ----------------------------------
-- Replication Code & Equity Panel: Available via GitHub at https://github.com/atishayj2202/QF-Quantitative-Portfolio-Optimization (and archived for long-term open science via Zenodo).
+- Replication Data & Results: Openly deposited on Zenodo with persistent DOI: https://doi.org/10.5281/zenodo.22274526.
+- Replication Code Repository: https://github.com/atishayj2202/Intelligent-Computing-Portfolio-Optimization
 - Factor Data: Ken French Daily Factor Library (Tuck School of Business).
 - Execution: Fully reproducible via `python3 -m scripts.run_all`.
+
 

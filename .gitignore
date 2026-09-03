@@ -17,3 +17,5 @@ manuscript/deprecated_paper.tex
 manuscript/*.txt
 !submission.txt
 !Cover_Letter.txt
+*.zip
+results_replication.zip
