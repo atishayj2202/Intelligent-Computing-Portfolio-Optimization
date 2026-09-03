@@ -119,20 +119,6 @@ The pipeline executes sequentially:
 
 ---
 
-## 6. Citation
-
-If you use this codebase or methodology in academic research, please cite:
-
-```bibtex
-@article{jain2026institutional,
-  title={Institutional Portfolio Optimization under Cardinality and Execution Frictions: A Walk-Forward Evaluation of Adaptive Diversity Preservation},
-  author={Jain, Atishaya and Jangra, Karan and Pacherwal, Vaibhav and Vats, Rishabh and Kumar, Rajeev},
-  journal={Working Paper / Submission Draft},
-  year={2026}
-}
-```
-
----
-
-## 7. License
+## 6. License
 This project is licensed under the MIT License.
+
