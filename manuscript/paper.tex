@@ -218,6 +218,7 @@ Table \ref{tab:master_wf} presents the continuous 2018--2024 chained out-of-samp
 \centering
 \caption{Master Walk-Forward Out-of-Sample Results (2018--2024 Chained OOS)}
 \label{tab:master_wf}
+\hspace*{-0.9cm}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Portfolio Strategy} &
@@ -250,21 +251,21 @@ While pairwise daily hypothesis tests do not reject equality at $p < 0.05$ (the 
 
 \begin{figure}[!htbp]
 \centering
-\begin{subfigure}{\textwidth}
-  \centering
-  \includegraphics[width=0.76\textwidth]{cumulative_net_returns.png}
-  \caption{Out-of-Sample Cumulative Net Returns}
-  \label{fig:cumulative_returns}
+
+\begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{cumulative_net_returns.png}
+    \caption{Out-of-Sample Cumulative Net Returns}
+    \label{fig:cumulative_returns}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{drawdown_profile.png}
+    \caption{Out-of-Sample Drawdown Profile}
+    \label{fig:drawdown}
 \end{subfigure}
 
-\vspace{0.15cm}
-
-\begin{subfigure}{\textwidth}
-  \centering
-  \includegraphics[width=0.76\textwidth]{drawdown_profile.png}
-  \caption{Out-of-Sample Drawdown Profile}
-  \label{fig:drawdown}
-\end{subfigure}
 \caption{Chained Walk-Forward Out-of-Sample Performance under 10 bps Annual-Formation Friction}
 \label{fig:combined_performance}
 \end{figure}
@@ -276,6 +277,7 @@ To isolate which construction component changes out-of-sample performance, Table
 \centering
 \caption{Economic Attribution of Portfolio-Construction Components (2018--2024 OOS)}
 \label{tab:ablation}
+\hspace*{-1cm}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Construction Variant} &
@@ -483,19 +485,19 @@ Third, strategy capacity under nonlinear Almgren--Chriss market impact exhibits 
 Fourth, Ken French/Carhart factor attribution yields a marginally significant conditional residual alpha ($\alpha = 6.53\%, t=2.01, p=0.045$), with the 2022 drawdown systematically accounted for by macro market beta and growth factor exposures during Federal Reserve tightening. Combined with moderate backtest overfitting risk ($\text{PBO} = 0.427$, $\text{DSR} = 0.956$), the framework demonstrates viability for institutional portfolio construction under strict discrete operational constraints.
 
 \section*{Acknowledgments}
-The authors thank the anonymous reviewers and editors for constructive feedback that helped improve this manuscript.
+The authors would like to thank the anonymous reviewers and editors for helpful and constructive comments that have improved this manuscript.
 
 \subsection*{Author Contributions}
-A. Jain, K. Jangra, and V. Pacherwal conceived and designed the algorithmic architecture, implemented the software pipeline, and conducted the walk-forward simulations. R. Vats and R. Kumar contributed to the econometric validation, factor attribution analysis, and manuscript review. All authors contributed to the writing, editing, and approval of the final manuscript.
+A. Jain, K. Jangra and V. Pacherwal developed the algorithmic architecture, wrote the software pipeline and performed the walk-forward simulations.A. Jain, K. Jangra and V. Pacherwal designed the algorithmic architecture, wrote the software pipeline and did walk-forward simulations. R. Vats and R. Kumar made contributions for the econometric validation, factor attribution analysis and manuscript review. The authors all participated in the writing, editing and approval of the final manuscript.
 
 \subsection*{Funding}
-The authors acknowledge that they did not receive external funding for this work.
+The authors declare that they have received no funding for this research.
 
 \subsection*{Conflicts of Interest}
-The authors declare that there is no conflict of interest regarding the publication of this article.
+The authors state that they have no conflict of interest in the publication of this article.
 
 \subsection*{Data Availability}
-Replication data and empirical walk-forward results are openly deposited on Zenodo at \url{https://doi.org/10.5281/zenodo.22274526}. The repository includes the ticker--date panel file \texttt{sp500\_daily.csv} containing daily simple returns and dollar volumes for S\&P~500 names over 2012--2024, along with the complete replication results package. Historical membership is reconstructed from ticker presence in that panel together with the point-in-time screens in Section~\ref{sec:universe}, not from a licensed index-constituent tape. Delisted names remain in the file for dates on which they have recorded returns. We do not apply a second corporate-action or split-adjustment layer beyond the simple returns stored in the panel. Factor series used in Section~\ref{sec:carhart} are the Ken French daily market, size, value, and momentum factors (Carhart). The risk-free rate in the factor regression is the Ken French daily RF series; the optimizer and headline Sharpe calculations continue to use a constant $2\%$ annualized rate as specified in the empirical design.
+All replication data and empirical walk-forward results are shared and made openly accessible on Zenodo: \url{https://doi.org/10.5281/zenodo.22274526}. The repository contains the ticker--date panel file \texttt{sp500\_daily.csv} that includes the daily simple returns and dollar volumes of the S\&P 500 names from 2012 to 2024, and the complete replication results package. Historical membership is built from the presence of ticker on that panel, and the point-in-time screens that are present in Section~\ref{sec:universe} and are not from a licensed index-constituent tape. Delisted Names keep appearing on the dates they have recorded returns. There is no second layer of return, split adjustment, etc. beyond the simple returns stored in the panel. The factors used here are factors defined by Ken French for daily market, size, value, and momentum factors (Carhart). The risk-free rate used in the factor regression is the Ken-French daily RF series and the $2 \%$ annualized rate that was specified in the empirical design is still used in the optimizer and headline Sharpe calculation.
 
 \bibliographystyle{apacite}
 \bibliography{references}
