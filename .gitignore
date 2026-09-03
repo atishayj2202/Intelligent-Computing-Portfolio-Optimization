@@ -16,3 +16,4 @@ manuscript/deprecated_paper.tex
 *.txt
 manuscript/*.txt
 !submission.txt
+!Cover_Letter.txt
